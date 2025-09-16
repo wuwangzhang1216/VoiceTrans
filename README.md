@@ -6,7 +6,7 @@
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                     🚀 VOICETRANS - Real-time Voice Translator ⚡             ║
+║                     🚀 VOICETRANS - Real-time Voice Translator ⚡              ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                ║
 ║  ┌─ Status ─────┐    ┌─ Current Translations (Last 3) ─────┐   ┌─ History ─┐ ║
@@ -15,9 +15,9 @@
 ║  │      ↓       │    │ Hello, how are you today?            │   │ 14:23:15  │ ║
 ║  │ Chinese 🇨🇳  │    │                                      │   │ Hello → 你│ ║
 ║  │              │    │ Translation:                         │   │ 14:23:20  │ ║
-║  │ ● LISTENING  │    │ 你好，你今天好吗？                      │   │ Good → 好 │ ║
+║  │ ● LISTENING  │    │ 你好，你今天好吗？                    │   │ Good → 好 │ ║
 ║  │ ✓ Connected  │    │                                      │   │ 14:23:25  │ ║
-║  │ ⚖️ Balanced   │    │ 14:23:15 • 5 words • 🚀 0.234s      │   │ Thanks →  │ ║
+║  │ ⚖️ Balanced  │    │ 14:23:15 • 5 words • 🚀 0.234s      │   │ Thanks →  │ ║
 ║  │ │████████░│  │    │                                      │   │   谢谢    │ ║
 ║  │              │    └──────────────────────────────────────┘   └───────────┘ ║
 ║  ├─ Performance ─┤                                                             ║
