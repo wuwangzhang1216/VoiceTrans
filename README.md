@@ -6,28 +6,28 @@
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                      VOICETRANS - Real-time Voice Translator                  ║
+║                      VOICETRANS - Real-time Voice Translator                 ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
-║                                                                                ║
-║  ┌─ Status ─────┐    ┌─ Current Translations (Last 3) ─────┐   ┌─ History ─┐ ║
-║  │              │    │                                      │   │           │ ║
-║  │ Auto-detect  │    │ Original:                            │   │ Time   -> │ ║
-║  │      ↓       │    │ Hello, how are you today?            │   │ 14:23:15  │ ║
-║  │   Chinese    │    │                                      │   │ Hello ->  │ ║
-║  │              │    │ Translation:                         │   │   你好    │ ║
-║  │ • LISTENING  │    │ 你好，你今天好吗？                    │   │ 14:23:20  │ ║
-║  │ + Connected  │    │                                      │   │ Good ->   │ ║
-║  │   Balanced   │    │ 14:23:15 • 5 words • 0.234s         │   │   好      │ ║
-║  │ |████████░|  │    │                                      │   │ 14:23:25  │ ║
-║  │              │    └──────────────────────────────────────┘   │ Thanks -> │ ║
-║  ├─ Performance ─┤                                                │   谢谢    │ ║
-║  │              │                                                └───────────┘ ║
-║  │ Session: 5m  │    ┌──────────────────────────────────────────────────────┐ ║
-║  │ Trans: 42    │    │  Press H to toggle history • S for stats              │ ║
-║  │ Avg: 0.3s    │    │  Space to pause • L for language • Q to quit          │ ║
-║  │ Speed: 50x   │    │  Speed: + Hyper  - Accurate  = Ultra  0 Balanced      │ ║
-║  │ Cost: $0.02  │    └──────────────────────────────────────────────────────┘ ║
-║  └──────────────┘                                                              ║
+║                                                                              ║
+║  ┌─ Status ─────┐    ┌─ Current Translations (Last 3) ─────┐    ┌─ History ─┐║
+║  │              │    │                                      │   │           │║
+║  │ Auto-detect  │    │ Original:                            │   │ Time   -> │║
+║  │      ↓       │    │ Hello, how are you today?            │   │ 14:23:15  │║
+║  │   Chinese    │    │                                      │   │ Hello ->  │║
+║  │              │    │ Translation:                         │   │   你好     │║
+║  │ • LISTENING  │    │ 你好，你今天好吗？                      │   │ 14:23:20  │║
+║  │ + Connected  │    │                                      │   │ Good ->   │║
+║  │   Balanced   │    │ 14:23:15 • 5 words • 0.234s          │   │   好      │║
+║  │ |████████░|  │    │                                      │   │ 14:23:25  │║
+║  │              │    └──────────────────────────────────────┘   │ Thanks    │║
+║  ├─ Performance ─┤                                              │   谢谢     │║
+║  │              │                                               └───────────┘║
+║  │ Session: 5m  │    ┌──────────────────────────────────────────────────────┐║
+║  │ Trans: 42    │    │  Press H to toggle history • S for stats             │║
+║  │ Avg: 0.3s    │    │  Space to pause • L for language • Q to quit         │║
+║  │ Speed: 50x   │    │  Speed: + Hyper  - Accurate  = Ultra  0 Balanced     │║
+║  │ Cost: $0.02  │    └──────────────────────────────────────────────────────┘║
+║  └──────────────┘                                                            ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 
