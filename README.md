@@ -77,7 +77,7 @@
 #### Option 1: Quick Install (Recommended)
 ```bash
 # Clone and install
-git clone https://github.com/yourusername/VoiceTrans.git
+git clone https://github.com/wuwangzhang1216/VoiceTrans.git
 cd VoiceTrans
 ./install.sh
 
@@ -91,7 +91,7 @@ vtrans
 #### Option 2: Manual Installation
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/VoiceTrans.git
+git clone https://github.com/wuwangzhang1216/VoiceTrans.git
 cd VoiceTrans
 
 # Create conda environment (optional but recommended)
@@ -108,7 +108,7 @@ vtrans --help
 #### Option 3: Traditional Setup
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/VoiceTrans.git
+git clone https://github.com/wuwangzhang1216/VoiceTrans.git
 cd VoiceTrans
 
 # Set up conda environment
