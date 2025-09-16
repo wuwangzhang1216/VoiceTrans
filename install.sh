@@ -115,66 +115,78 @@ EOF
 else
     echo "⚠️  Conda not detected"
 
-    # Check for externally managed environment (Python 3.11+)
-    if python3 -c "import sysconfig; exit(0 if sysconfig.get_path('purelib').startswith('/usr') else 1)" 2>/dev/null; then
-        echo ""
-        echo "⚠️  Detected externally-managed Python environment (PEP 668)"
-        echo "This is common with Python 3.11+ installed via Homebrew or system package manager."
-        echo ""
-        echo "Please choose an installation method:"
-        echo "1) Create a virtual environment (Recommended)"
-        echo "2) Install with pipx (if available)"
-        echo "3) Install with --user flag"
-        echo "4) Force system-wide installation (Not recommended)"
-        echo ""
-        read -p "Enter your choice (1-4): " choice
+    # Try to install and check if we get an externally-managed error
+    echo ""
+    echo "Checking Python environment..."
 
-        case $choice in
-            1)
-                create_venv
-                ;;
-            2)
-                if command -v pipx &> /dev/null; then
-                    echo "Installing with pipx..."
-                    pipx install -e .
-                    echo "✅ VoiceTrans installed with pipx"
-                else
-                    echo "pipx not found. Install it with: brew install pipx"
-                    echo "Then run this installer again and choose option 2."
-                    exit 1
-                fi
-                ;;
-            3)
-                echo "Installing with --user flag..."
-                pip3 install --user -e .
+    # Test if pip install would fail due to externally managed environment
+    if ! pip3 install --dry-run -e . &>/dev/null; then
+        # Check if it's specifically an externally-managed error
+        ERROR_MSG=$(pip3 install --dry-run -e . 2>&1)
+        if echo "$ERROR_MSG" | grep -q "externally-managed-environment\|EXTERNALLY-MANAGED"; then
+            echo ""
+            echo "⚠️  Detected externally-managed Python environment (PEP 668)"
+            echo "This is common with Python 3.11+ installed via Homebrew or system package manager."
+            echo ""
+            echo "Please choose an installation method:"
+            echo "1) Create a virtual environment (Recommended)"
+            echo "2) Install with pipx (if available)"
+            echo "3) Install with --user flag"
+            echo "4) Force system-wide installation (Not recommended)"
+            echo ""
+            read -p "Enter your choice (1-4): " choice
 
-                # Check if user site-packages is in PATH
-                USER_BIN=$(python3 -m site --user-base)/bin
-                if [[ ":$PATH:" != *":$USER_BIN:"* ]]; then
-                    echo ""
-                    echo "⚠️  Warning: $USER_BIN is not in your PATH"
-                    echo "Add this to your ~/.bashrc or ~/.zshrc:"
-                    echo "  export PATH=\"$USER_BIN:\$PATH\""
-                fi
-                ;;
-            4)
-                echo "⚠️  Warning: This may break your system Python!"
-                read -p "Are you sure? (y/N): " confirm
-                if [[ $confirm == "y" || $confirm == "Y" ]]; then
-                    pip3 install --break-system-packages -e .
-                else
-                    echo "Installation cancelled."
+            case $choice in
+                1)
+                    create_venv
+                    ;;
+                2)
+                    if command -v pipx &> /dev/null; then
+                        echo "Installing with pipx..."
+                        pipx install -e .
+                        echo "✅ VoiceTrans installed with pipx"
+                    else
+                        echo "pipx not found. Install it with: brew install pipx"
+                        echo "Then run this installer again and choose option 2."
+                        exit 1
+                    fi
+                    ;;
+                3)
+                    echo "Installing with --user flag..."
+                    pip3 install --user -e .
+
+                    # Check if user site-packages is in PATH
+                    USER_BIN=$(python3 -m site --user-base)/bin
+                    if [[ ":$PATH:" != *":$USER_BIN:"* ]]; then
+                        echo ""
+                        echo "⚠️  Warning: $USER_BIN is not in your PATH"
+                        echo "Add this to your ~/.bashrc or ~/.zshrc:"
+                        echo "  export PATH=\"$USER_BIN:\$PATH\""
+                    fi
+                    ;;
+                4)
+                    echo "⚠️  Warning: This may break your system Python!"
+                    read -p "Are you sure? (y/N): " confirm
+                    if [[ $confirm == "y" || $confirm == "Y" ]]; then
+                        pip3 install --break-system-packages -e .
+                    else
+                        echo "Installation cancelled."
+                        exit 1
+                    fi
+                    ;;
+                *)
+                    echo "Invalid choice. Installation cancelled."
                     exit 1
-                fi
-                ;;
-            *)
-                echo "Invalid choice. Installation cancelled."
-                exit 1
-                ;;
-        esac
+                    ;;
+            esac
+        else
+            # Some other error occurred
+            echo "Installation failed with error:"
+            echo "$ERROR_MSG"
+            exit 1
+        fi
     else
-        # Regular pip installation for older Python versions
-        echo ""
+        # No externally-managed environment, proceed with normal installation
         echo "Installing VoiceTrans with pip..."
         pip3 install -e .
 
