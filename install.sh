@@ -26,6 +26,45 @@ else
     exit 1
 fi
 
+# Function to create virtual environment
+create_venv() {
+    echo ""
+    echo "Creating virtual environment for VoiceTrans..."
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install --upgrade pip
+    pip install -e .
+
+    # Create wrapper script
+    WRAPPER_SCRIPT="/usr/local/bin/vtrans"
+    VTRANS_DIR=$(pwd)
+
+    echo "Creating wrapper script at $WRAPPER_SCRIPT..."
+    cat > /tmp/vtrans_wrapper << EOF
+#!/bin/bash
+# VoiceTrans wrapper script - automatically activates virtual environment
+
+# Get the VoiceTrans installation directory
+VTRANS_DIR="$VTRANS_DIR"
+
+# Activate virtual environment and run vtrans
+source "\$VTRANS_DIR/venv/bin/activate"
+python -m voicetrans.cli "\$@"
+EOF
+
+    # Install the wrapper script
+    if [[ -w "/usr/local/bin" ]]; then
+        mv /tmp/vtrans_wrapper "$WRAPPER_SCRIPT"
+        chmod +x "$WRAPPER_SCRIPT"
+    else
+        echo "Need sudo permission to install to /usr/local/bin"
+        sudo mv /tmp/vtrans_wrapper "$WRAPPER_SCRIPT"
+        sudo chmod +x "$WRAPPER_SCRIPT"
+    fi
+
+    echo "✅ VoiceTrans installed with virtual environment"
+}
+
 # Check if conda is available
 if command -v conda &> /dev/null; then
     echo "✓ Conda detected"
@@ -53,9 +92,6 @@ if command -v conda &> /dev/null; then
 # VoiceTrans wrapper script - automatically activates conda environment
 
 if command -v conda &> /dev/null; then
-    # Get the directory where VoiceTrans is installed
-    VTRANS_DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
-
     # Activate conda and run vtrans
     eval "$(conda shell.bash hook)"
     conda activate voicetrans
@@ -77,18 +113,79 @@ EOF
     fi
 
 else
-    echo "⚠️  Conda not detected, using system Python"
-    echo ""
-    echo "Installing VoiceTrans with pip..."
-    pip3 install -e .
+    echo "⚠️  Conda not detected"
 
-    # Check if pip install location is in PATH
-    PIP_BIN=$(python3 -m site --user-base)/bin
-    if [[ ":$PATH:" != *":$PIP_BIN:"* ]]; then
+    # Check for externally managed environment (Python 3.11+)
+    if python3 -c "import sysconfig; exit(0 if sysconfig.get_path('purelib').startswith('/usr') else 1)" 2>/dev/null; then
         echo ""
-        echo "⚠️  Warning: $PIP_BIN is not in your PATH"
-        echo "Add this to your ~/.bashrc or ~/.zshrc:"
-        echo "  export PATH=\"$PIP_BIN:\$PATH\""
+        echo "⚠️  Detected externally-managed Python environment (PEP 668)"
+        echo "This is common with Python 3.11+ installed via Homebrew or system package manager."
+        echo ""
+        echo "Please choose an installation method:"
+        echo "1) Create a virtual environment (Recommended)"
+        echo "2) Install with pipx (if available)"
+        echo "3) Install with --user flag"
+        echo "4) Force system-wide installation (Not recommended)"
+        echo ""
+        read -p "Enter your choice (1-4): " choice
+
+        case $choice in
+            1)
+                create_venv
+                ;;
+            2)
+                if command -v pipx &> /dev/null; then
+                    echo "Installing with pipx..."
+                    pipx install -e .
+                    echo "✅ VoiceTrans installed with pipx"
+                else
+                    echo "pipx not found. Install it with: brew install pipx"
+                    echo "Then run this installer again and choose option 2."
+                    exit 1
+                fi
+                ;;
+            3)
+                echo "Installing with --user flag..."
+                pip3 install --user -e .
+
+                # Check if user site-packages is in PATH
+                USER_BIN=$(python3 -m site --user-base)/bin
+                if [[ ":$PATH:" != *":$USER_BIN:"* ]]; then
+                    echo ""
+                    echo "⚠️  Warning: $USER_BIN is not in your PATH"
+                    echo "Add this to your ~/.bashrc or ~/.zshrc:"
+                    echo "  export PATH=\"$USER_BIN:\$PATH\""
+                fi
+                ;;
+            4)
+                echo "⚠️  Warning: This may break your system Python!"
+                read -p "Are you sure? (y/N): " confirm
+                if [[ $confirm == "y" || $confirm == "Y" ]]; then
+                    pip3 install --break-system-packages -e .
+                else
+                    echo "Installation cancelled."
+                    exit 1
+                fi
+                ;;
+            *)
+                echo "Invalid choice. Installation cancelled."
+                exit 1
+                ;;
+        esac
+    else
+        # Regular pip installation for older Python versions
+        echo ""
+        echo "Installing VoiceTrans with pip..."
+        pip3 install -e .
+
+        # Check if pip install location is in PATH
+        PIP_BIN=$(python3 -m site --user-base)/bin
+        if [[ ":$PATH:" != *":$PIP_BIN:"* ]]; then
+            echo ""
+            echo "⚠️  Warning: $PIP_BIN is not in your PATH"
+            echo "Add this to your ~/.bashrc or ~/.zshrc:"
+            echo "  export PATH=\"$PIP_BIN:\$PATH\""
+        fi
     fi
 fi
 
@@ -106,3 +203,12 @@ echo "  vtrans --config     # Show config file location"
 echo ""
 echo "First time? Run 'vtrans --setup' to configure your API keys."
 echo ""
+
+# Test if vtrans command is available
+if command -v vtrans &> /dev/null; then
+    echo "✅ vtrans command is ready to use!"
+else
+    echo "⚠️  vtrans command not found in PATH. You may need to:"
+    echo "   - Restart your terminal"
+    echo "   - Or add the installation directory to your PATH"
+fi
