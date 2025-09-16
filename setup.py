@@ -38,7 +38,6 @@ setup(
         "webrtcvad>=2.0.10",
         "rich>=13.0.0",
         "numpy>=1.20.0",
-        "wave",
     ],
     entry_points={
         "console_scripts": [
