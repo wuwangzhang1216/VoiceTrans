@@ -2,6 +2,46 @@
 
 🚀 **Professional Real-time Voice Translator** - Ultra-low latency voice translation with advanced AI
 
+## 📸 Interface Preview
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                     🚀 VOICETRANS - Real-time Voice Translator ⚡             ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                                ║
+║  ┌─ Status ─────┐    ┌─ Current Translations (Last 3) ─────┐   ┌─ History ─┐ ║
+║  │              │    │                                      │   │           │ ║
+║  │ Auto-detect  │    │ Original:                            │   │ Time  →   │ ║
+║  │      ↓       │    │ Hello, how are you today?            │   │ 14:23:15  │ ║
+║  │ Chinese 🇨🇳  │    │                                      │   │ Hello → 你│ ║
+║  │              │    │ Translation:                         │   │ 14:23:20  │ ║
+║  │ ● LISTENING  │    │ 你好，你今天好吗？                      │   │ Good → 好 │ ║
+║  │ ✓ Connected  │    │                                      │   │ 14:23:25  │ ║
+║  │ ⚖️ Balanced   │    │ 14:23:15 • 5 words • 🚀 0.234s      │   │ Thanks →  │ ║
+║  │ │████████░│  │    │                                      │   │   谢谢    │ ║
+║  │              │    └──────────────────────────────────────┘   └───────────┘ ║
+║  ├─ Performance ─┤                                                             ║
+║  │              │                                                              ║
+║  │ Session: 5m  │    ┌──────────────────────────────────────────────────────┐ ║
+║  │ Trans: 42    │    │  Press H to toggle history • S for stats              │ ║
+║  │ Avg: 0.3s    │    │  Space to pause • L for language • Q to quit          │ ║
+║  │ Speed: 50x   │    │  Speed: + Hyper  - Accurate  = Ultra  0 Balanced      │ ║
+║  │ Cost: $0.02  │    └──────────────────────────────────────────────────────┘ ║
+║  └──────────────┘                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+### 🎨 UI Features
+
+- **Real-time Dashboard**: Live transcription and translation display
+- **Dynamic Layout**: Hide/show panels for optimal viewing (press H to toggle history)
+- **Performance Metrics**: Track latency, speed, and cost in real-time
+- **Audio Visualization**: Visual feedback of audio input levels
+- **Color-coded Latency**:
+  - 🟢 Green: < 0.5s (Ultra-fast)
+  - 🟡 Yellow: 0.5-1s (Fast)
+  - 🔴 Red: > 1s (Normal)
+
 ## ✨ Features
 
 ### Core Capabilities
@@ -83,6 +123,18 @@ python voicetrans/app.py
 ```
 
 ### Configuration
+
+#### 🔑 Get Your API Keys
+
+1. **Fireworks API Key** (for transcription - recommended):
+   - Get your free key at: https://app.fireworks.ai/settings/users/api-keys
+   - Sign up for free, no credit card required
+   - Provides ultra-fast transcription (23x faster than OpenAI)
+
+2. **OpenAI API Key** (optional, for translation):
+   - Get your key at: https://platform.openai.com/settings/
+   - Required only if you want translation features
+   - Uses GPT models for accurate context-aware translation
 
 **Option A: Interactive Setup (Easiest)**
 ```bash
