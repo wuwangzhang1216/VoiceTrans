@@ -67,6 +67,10 @@ create_venv() {
     source venv/bin/activate
     pip install --upgrade pip
 
+    # Install setuptools first (required for Python 3.13 compatibility)
+    echo "Installing setuptools for Python 3.13 compatibility..."
+    pip install setuptools
+
     # Try to install with proper environment variables for macOS
     if [[ "$OSTYPE" == "darwin"* ]]; then
         if command -v brew &> /dev/null; then

@@ -33,6 +33,7 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=[
+        "setuptools",  # Required for pkg_resources in Python 3.13
         "openai>=1.0.0",
         "pyaudio>=0.2.11",
         "webrtcvad>=2.0.10",
