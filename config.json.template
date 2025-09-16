@@ -1,0 +1,11 @@
+{
+  "fireworks_api_key": "your-fireworks-api-key-here",
+  "openai_api_key": "your-openai-api-key-here",
+  "default_target_language": "zh",
+  "theme": "dark",
+  "sensitivity_mode": "Balanced",
+  "use_turbo_model": true,
+  "use_vad_optimization": true,
+  "show_history": true,
+  "show_stats": true
+}
