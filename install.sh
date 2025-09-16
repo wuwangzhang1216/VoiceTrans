@@ -26,13 +26,55 @@ else
     exit 1
 fi
 
+# Function to install PortAudio on macOS
+install_portaudio_mac() {
+    echo ""
+    echo "Checking for PortAudio (required for audio input)..."
+
+    if command -v brew &> /dev/null; then
+        if ! brew list portaudio &>/dev/null; then
+            echo "Installing PortAudio via Homebrew..."
+            brew install portaudio
+        else
+            echo "✓ PortAudio already installed"
+        fi
+    else
+        echo "⚠️  Homebrew not found. Please install PortAudio manually:"
+        echo "    1. Install Homebrew from https://brew.sh"
+        echo "    2. Run: brew install portaudio"
+        return 1
+    fi
+}
+
 # Function to create virtual environment
 create_venv() {
     echo ""
+
+    # Install PortAudio on macOS first
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        if ! install_portaudio_mac; then
+            echo "⚠️  Warning: PortAudio installation failed. PyAudio may not work properly."
+            echo "You can continue, but audio input might not function."
+            read -p "Continue anyway? (y/N): " cont
+            if [[ ! $cont =~ ^[Yy]$ ]]; then
+                exit 1
+            fi
+        fi
+    fi
+
     echo "Creating virtual environment for VoiceTrans..."
     python3 -m venv venv
     source venv/bin/activate
     pip install --upgrade pip
+
+    # Try to install with proper environment variables for macOS
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        if command -v brew &> /dev/null; then
+            export LDFLAGS="-L$(brew --prefix portaudio)/lib"
+            export CFLAGS="-I$(brew --prefix portaudio)/include"
+        fi
+    fi
+
     pip install -e .
 
     # Create wrapper script
