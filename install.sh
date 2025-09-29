@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# VoiceTrans Installation Script
-# This script installs VoiceTrans globally so you can use 'vtrans' command from anywhere
+# VoiceTrans Installation Script - Improved Version
+# This script installs VoiceTrans with better dependency handling
 
 echo "======================================"
 echo "VoiceTrans Installation Script"
@@ -11,10 +11,13 @@ echo ""
 # Check if running on macOS or Linux
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "✓ Detected macOS"
+    IS_MACOS=true
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     echo "✓ Detected Linux"
+    IS_MACOS=false
 else
     echo "⚠️  Warning: Unsupported OS. This script is designed for macOS/Linux"
+    IS_MACOS=false
 fi
 
 # Check for Python 3.8+
@@ -29,7 +32,7 @@ fi
 # Function to install PortAudio on macOS
 install_portaudio_mac() {
     echo ""
-    echo "Checking for PortAudio (required for audio input)..."
+    echo "Step 1: Installing PortAudio (required for audio input)..."
 
     if command -v brew &> /dev/null; then
         if ! brew list portaudio &>/dev/null; then
@@ -38,20 +41,85 @@ install_portaudio_mac() {
         else
             echo "✓ PortAudio already installed"
         fi
+        # Set environment variables for PyAudio compilation
+        export LDFLAGS="-L$(brew --prefix portaudio)/lib"
+        export CFLAGS="-I$(brew --prefix portaudio)/include"
+        echo "✓ Set compilation flags for PyAudio"
+        return 0
     else
-        echo "⚠️  Homebrew not found. Please install PortAudio manually:"
+        echo "❌ Homebrew not found. Please install PortAudio manually:"
         echo "    1. Install Homebrew from https://brew.sh"
         echo "    2. Run: brew install portaudio"
         return 1
     fi
 }
 
+# Function to install dependencies step by step
+install_dependencies_stepwise() {
+    echo ""
+    echo "Step 2: Installing Python dependencies..."
+
+    # Upgrade pip first
+    pip install --upgrade pip
+
+    # Install setuptools first (required for Python 3.13+)
+    echo "  Installing setuptools..."
+    pip install setuptools
+
+    # Install non-problematic dependencies first
+    echo "  Installing core dependencies..."
+    pip install openai>=1.0.0
+    pip install numpy>=1.20.0
+    pip install rich>=13.0.0
+    pip install webrtcvad>=2.0.10
+    pip install pynput>=1.7.0
+    pip install websocket-client>=1.0.0
+    pip install certifi
+
+    # Try to install PyAudio last (most likely to fail)
+    echo "  Installing PyAudio (this may take a moment)..."
+    if [[ "$IS_MACOS" == true ]]; then
+        # On macOS, try with the environment variables set
+        if ! pip install pyaudio>=0.2.11; then
+            echo ""
+            echo "⚠️  PyAudio installation failed. Trying alternative methods..."
+
+            # Try installing from conda-forge if conda is available
+            if command -v conda &> /dev/null; then
+                echo "  Trying conda-forge..."
+                conda install -c conda-forge pyaudio -y
+            else
+                echo "❌ PyAudio installation failed. Audio input will not work."
+                echo "   To fix this later, run:"
+                echo "   brew install portaudio && pip install pyaudio"
+                return 1
+            fi
+        fi
+    else
+        # On Linux, just try pip
+        if ! pip install pyaudio>=0.2.11; then
+            echo "⚠️  PyAudio installation failed. You may need to install PortAudio:"
+            echo "   Ubuntu/Debian: sudo apt-get install portaudio19-dev"
+            echo "   Fedora: sudo dnf install portaudio-devel"
+            return 1
+        fi
+    fi
+
+    echo "✓ All dependencies installed successfully"
+    return 0
+}
+
 # Function to create virtual environment
 create_venv() {
     echo ""
+    echo "Creating virtual environment for VoiceTrans..."
+
+    # Create and activate virtual environment
+    python3 -m venv venv
+    source venv/bin/activate
 
     # Install PortAudio on macOS first
-    if [[ "$OSTYPE" == "darwin"* ]]; then
+    if [[ "$IS_MACOS" == true ]]; then
         if ! install_portaudio_mac; then
             echo "⚠️  Warning: PortAudio installation failed. PyAudio may not work properly."
             echo "You can continue, but audio input might not function."
@@ -62,30 +130,20 @@ create_venv() {
         fi
     fi
 
-    echo "Creating virtual environment for VoiceTrans..."
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install --upgrade pip
+    # Install dependencies step by step
+    install_dependencies_stepwise
 
-    # Install setuptools first (required for Python 3.13 compatibility)
-    echo "Installing setuptools for Python 3.13 compatibility..."
-    pip install setuptools
-
-    # Try to install with proper environment variables for macOS
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        if command -v brew &> /dev/null; then
-            export LDFLAGS="-L$(brew --prefix portaudio)/lib"
-            export CFLAGS="-I$(brew --prefix portaudio)/include"
-        fi
-    fi
-
-    pip install -e .
+    # Now install the package itself (without dependencies since we already installed them)
+    echo ""
+    echo "Step 3: Installing VoiceTrans package..."
+    pip install --no-deps -e .
 
     # Create wrapper script
     WRAPPER_SCRIPT="/usr/local/bin/vtrans"
     VTRANS_DIR=$(pwd)
 
-    echo "Creating wrapper script at $WRAPPER_SCRIPT..."
+    echo ""
+    echo "Step 4: Creating global vtrans command..."
     cat > /tmp/vtrans_wrapper << EOF
 #!/bin/bash
 # VoiceTrans wrapper script - automatically activates virtual environment
@@ -111,29 +169,55 @@ EOF
     echo "✅ VoiceTrans installed with virtual environment"
 }
 
-# Check if conda is available
-if command -v conda &> /dev/null; then
-    echo "✓ Conda detected"
-
-    # Check if voicetrans environment exists
-    if conda env list | grep -q "voicetrans"; then
-        echo "✓ VoiceTrans conda environment found"
+# Main installation logic
+main() {
+    # Check if conda is available and preferred
+    if command -v conda &> /dev/null; then
+        echo "✓ Conda detected"
         echo ""
-        echo "Installing VoiceTrans in conda environment..."
-        conda run -n voicetrans pip install -e .
-    else
+        echo "Installation options:"
+        echo "1) Use conda environment (recommended for conda users)"
+        echo "2) Use Python virtual environment (venv)"
         echo ""
-        echo "Creating VoiceTrans conda environment..."
-        conda create -n voicetrans python=3.11 -y
-        echo "Installing dependencies..."
-        conda run -n voicetrans pip install -e .
-    fi
+        read -p "Choose installation method (1 or 2): " conda_choice
 
-    # Create wrapper script for conda activation
-    WRAPPER_SCRIPT="/usr/local/bin/vtrans"
-    echo "Creating wrapper script at $WRAPPER_SCRIPT..."
+        if [[ "$conda_choice" == "1" ]]; then
+            # Check if voicetrans environment exists
+            if conda env list | grep -q "voicetrans"; then
+                echo "✓ VoiceTrans conda environment found"
+                echo ""
+                echo "Updating VoiceTrans in conda environment..."
 
-    cat > /tmp/vtrans_wrapper << 'EOF'
+                # Activate the environment
+                eval "$(conda shell.bash hook)"
+                conda activate voicetrans
+            else
+                echo ""
+                echo "Creating VoiceTrans conda environment..."
+                conda create -n voicetrans python=3.11 -y
+                eval "$(conda shell.bash hook)"
+                conda activate voicetrans
+            fi
+
+            # Install PortAudio through conda first on macOS
+            if [[ "$IS_MACOS" == true ]]; then
+                echo "Installing PortAudio via conda..."
+                conda install -c conda-forge portaudio -y
+            fi
+
+            # Install dependencies step by step
+            install_dependencies_stepwise
+
+            # Install the package
+            echo ""
+            echo "Installing VoiceTrans package..."
+            pip install --no-deps -e .
+
+            # Create wrapper script for conda
+            WRAPPER_SCRIPT="/usr/local/bin/vtrans"
+            echo "Creating wrapper script at $WRAPPER_SCRIPT..."
+
+            cat > /tmp/vtrans_wrapper << 'EOF'
 #!/bin/bash
 # VoiceTrans wrapper script - automatically activates conda environment
 
@@ -143,109 +227,77 @@ if command -v conda &> /dev/null; then
     conda activate voicetrans
     python -m voicetrans.cli "$@"
 else
-    # Fallback to system Python
-    python3 -m voicetrans.cli "$@"
+    echo "❌ Conda not found. Please ensure conda is in your PATH"
+    exit 1
 fi
 EOF
 
-    # Install the wrapper script
-    if [[ -w "/usr/local/bin" ]]; then
-        mv /tmp/vtrans_wrapper "$WRAPPER_SCRIPT"
-        chmod +x "$WRAPPER_SCRIPT"
-    else
-        echo "Need sudo permission to install to /usr/local/bin"
-        sudo mv /tmp/vtrans_wrapper "$WRAPPER_SCRIPT"
-        sudo chmod +x "$WRAPPER_SCRIPT"
-    fi
+            # Install the wrapper script
+            if [[ -w "/usr/local/bin" ]]; then
+                mv /tmp/vtrans_wrapper "$WRAPPER_SCRIPT"
+                chmod +x "$WRAPPER_SCRIPT"
+            else
+                echo "Need sudo permission to install to /usr/local/bin"
+                sudo mv /tmp/vtrans_wrapper "$WRAPPER_SCRIPT"
+                sudo chmod +x "$WRAPPER_SCRIPT"
+            fi
 
-else
-    echo "⚠️  Conda not detected"
-
-    # Try to install and check if we get an externally-managed error
-    echo ""
-    echo "Checking Python environment..."
-
-    # Test if pip install would fail due to externally managed environment
-    if ! pip3 install --dry-run -e . &>/dev/null; then
-        # Check if it's specifically an externally-managed error
-        ERROR_MSG=$(pip3 install --dry-run -e . 2>&1)
-        if echo "$ERROR_MSG" | grep -q "externally-managed-environment\|EXTERNALLY-MANAGED"; then
-            echo ""
-            echo "⚠️  Detected externally-managed Python environment (PEP 668)"
-            echo "This is common with Python 3.11+ installed via Homebrew or system package manager."
-            echo ""
-            echo "Please choose an installation method:"
-            echo "1) Create a virtual environment (Recommended)"
-            echo "2) Install with pipx (if available)"
-            echo "3) Install with --user flag"
-            echo "4) Force system-wide installation (Not recommended)"
-            echo ""
-            read -p "Enter your choice (1-4): " choice
-
-            case $choice in
-                1)
-                    create_venv
-                    ;;
-                2)
-                    if command -v pipx &> /dev/null; then
-                        echo "Installing with pipx..."
-                        pipx install -e .
-                        echo "✅ VoiceTrans installed with pipx"
-                    else
-                        echo "pipx not found. Install it with: brew install pipx"
-                        echo "Then run this installer again and choose option 2."
-                        exit 1
-                    fi
-                    ;;
-                3)
-                    echo "Installing with --user flag..."
-                    pip3 install --user -e .
-
-                    # Check if user site-packages is in PATH
-                    USER_BIN=$(python3 -m site --user-base)/bin
-                    if [[ ":$PATH:" != *":$USER_BIN:"* ]]; then
-                        echo ""
-                        echo "⚠️  Warning: $USER_BIN is not in your PATH"
-                        echo "Add this to your ~/.bashrc or ~/.zshrc:"
-                        echo "  export PATH=\"$USER_BIN:\$PATH\""
-                    fi
-                    ;;
-                4)
-                    echo "⚠️  Warning: This may break your system Python!"
-                    read -p "Are you sure? (y/N): " confirm
-                    if [[ $confirm == "y" || $confirm == "Y" ]]; then
-                        pip3 install --break-system-packages -e .
-                    else
-                        echo "Installation cancelled."
-                        exit 1
-                    fi
-                    ;;
-                *)
-                    echo "Invalid choice. Installation cancelled."
-                    exit 1
-                    ;;
-            esac
+            echo "✅ VoiceTrans installed with conda environment"
         else
-            # Some other error occurred
-            echo "Installation failed with error:"
-            echo "$ERROR_MSG"
-            exit 1
+            create_venv
         fi
     else
-        # No externally-managed environment, proceed with normal installation
-        echo "Installing VoiceTrans with pip..."
-        pip3 install -e .
+        # No conda, check for externally-managed environment
+        echo ""
+        echo "Checking Python environment..."
 
-        # Check if pip install location is in PATH
-        PIP_BIN=$(python3 -m site --user-base)/bin
-        if [[ ":$PATH:" != *":$PIP_BIN:"* ]]; then
+        # Test if pip install would fail due to externally managed environment
+        if ! pip3 install --dry-run setuptools &>/dev/null; then
+            ERROR_MSG=$(pip3 install --dry-run setuptools 2>&1)
+            if echo "$ERROR_MSG" | grep -q "externally-managed-environment\|EXTERNALLY-MANAGED"; then
+                echo ""
+                echo "⚠️  Detected externally-managed Python environment"
+                echo "A virtual environment is required for installation."
+                echo ""
+                create_venv
+            else
+                echo "Installation check failed with error:"
+                echo "$ERROR_MSG"
+                exit 1
+            fi
+        else
+            # No restrictions, but still recommend venv
             echo ""
-            echo "⚠️  Warning: $PIP_BIN is not in your PATH"
-            echo "Add this to your ~/.bashrc or ~/.zshrc:"
-            echo "  export PATH=\"$PIP_BIN:\$PATH\""
+            echo "Installation options:"
+            echo "1) Create virtual environment (Recommended)"
+            echo "2) Install in system Python"
+            echo ""
+            read -p "Choose installation method (1 or 2): " venv_choice
+
+            if [[ "$venv_choice" == "2" ]]; then
+                # Install PortAudio on macOS
+                if [[ "$IS_MACOS" == true ]]; then
+                    if ! install_portaudio_mac; then
+                        echo "⚠️  Warning: PortAudio installation failed."
+                        read -p "Continue anyway? (y/N): " cont
+                        if [[ ! $cont =~ ^[Yy]$ ]]; then
+                            exit 1
+                        fi
+                    fi
+                fi
+
+                echo "Installing VoiceTrans in system Python..."
+                install_dependencies_stepwise
+                pip3 install --no-deps -e .
+            else
+                create_venv
+            fi
         fi
     fi
-fi
+}
+
+# Run main installation
+main
 
 echo ""
 echo "======================================"
