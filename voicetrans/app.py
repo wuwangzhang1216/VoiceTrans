@@ -97,13 +97,14 @@ class FireworksVoiceTranslator:
         self.is_recording = True
 
         # VAD with balanced settings
-        self.vad_level = 1  # Less aggressive VAD
+        self.vad_level = 2  # Moderate aggressive VAD (1=least, 3=most)
         self.vad = webrtcvad.Vad(self.vad_level)
 
-        # Balanced detection parameters for reliability
-        self.silence_threshold = 10  # 300ms of silence
-        self.min_speech_chunks = 8   # 240ms minimum speech
-        self.max_recording_duration = 10  # 10s chunks max
+        # Improved detection parameters for natural speech
+        self.silence_threshold = 25  # 750ms of silence (more natural pause)
+        self.min_speech_chunks = 10   # 300ms minimum speech
+        self.max_recording_duration = 5  # 5s max to avoid multiple sentences
+        self.speech_timeout = 100  # 3s timeout for single utterance
         self.sensitivity_mode = self.config.get('sensitivity_mode', 'Balanced')
 
         # Fireworks-specific settings
@@ -365,13 +366,19 @@ class FireworksVoiceTranslator:
                     audio_array = np.frombuffer(data, dtype=np.int16)
                     self.audio_level = np.abs(audio_array).mean() / 32768.0
 
-                    # VAD check
+                    # VAD check with dynamic threshold
                     is_speech = self.vad.is_speech(data, self.sample_rate)
-                    
-                    # Lower threshold for faster detection
-                    amplitude_threshold = 0.005
+
+                    # Dynamic amplitude threshold based on mode
+                    amplitude_threshold = {
+                        "Hyper-Speed": 0.003,
+                        "Ultra-Fast": 0.005,
+                        "Balanced": 0.008,
+                        "Accurate": 0.01
+                    }.get(self.sensitivity_mode, 0.008)
+
                     is_loud_enough = self.audio_level > amplitude_threshold
-                    
+
                     # Combine VAD and amplitude
                     is_speech = is_speech and is_loud_enough
                     self.is_speaking = is_speech
@@ -385,8 +392,9 @@ class FireworksVoiceTranslator:
                         speech_chunks += 1
                         recording_chunks += 1
 
-                        # Check for max duration (5 seconds for ultra-fast processing)
-                        if recording_chunks * self.chunk_size / self.sample_rate > self.max_recording_duration:
+                        # Check for max duration or speech timeout
+                        if (recording_chunks * self.chunk_size / self.sample_rate > self.max_recording_duration or
+                            speech_chunks >= self.speech_timeout):
                             if len(frames) > self.min_speech_chunks:
                                 audio_data = b''.join(frames)
                                 # Process immediately with Fireworks
@@ -403,10 +411,18 @@ class FireworksVoiceTranslator:
                         silent_chunks += 1
                         frames.append(data)
 
-                        # Very fast end detection for Fireworks
+                        # Improved end detection with natural pause threshold
                         if silent_chunks > self.silence_threshold:
                             if len(frames) > self.min_speech_chunks:
                                 duration = len(frames) * self.chunk_size / self.sample_rate
+                                # Ensure minimum duration for meaningful speech (skip short noises)
+                                if duration < 0.5:
+                                    frames = []
+                                    silent_chunks = 0
+                                    speech_chunks = 0
+                                    recording_chunks = 0
+                                    self.is_speaking = False
+                                    continue
                                 self.stats['total_audio_duration'] += duration
                                 
                                 audio_data = b''.join(frames)
@@ -626,28 +642,44 @@ class FireworksVoiceTranslator:
     def adjust_sensitivity(self, direction):
         """Adjust detection sensitivity"""
         if direction == '+':
-            # Hyper-speed mode
-            self.silence_threshold = max(2, self.silence_threshold - 1)
-            self.min_speech_chunks = max(2, self.min_speech_chunks - 1)
+            # Hyper-speed mode - very short pauses
+            self.silence_threshold = 15  # 450ms pause
+            self.min_speech_chunks = 8   # 240ms min
+            self.max_recording_duration = 3  # 3s max
+            self.speech_timeout = 65  # ~2s max utterance
             self.sensitivity_mode = "Hyper-Speed"
+            self.vad_level = 1
+            self.vad.set_mode(self.vad_level)
             self.ui_message = "🚀 Hyper-Speed Mode - Minimum latency"
         elif direction == '-':
-            # More accurate
-            self.silence_threshold = min(15, self.silence_threshold + 2)
-            self.min_speech_chunks = min(10, self.min_speech_chunks + 2)
+            # More accurate - longer pauses for complete sentences
+            self.silence_threshold = 35  # 1050ms pause
+            self.min_speech_chunks = 15  # 450ms min
+            self.max_recording_duration = 7  # 7s max
+            self.speech_timeout = 165  # ~5s max utterance
             self.sensitivity_mode = "Accurate"
+            self.vad_level = 3
+            self.vad.set_mode(self.vad_level)
             self.ui_message = "🎯 Accurate Mode - Better accuracy"
         elif direction == '=':
-            # Reset to ultra-fast
-            self.silence_threshold = 5
-            self.min_speech_chunks = 3
+            # Ultra-fast - balanced speed
+            self.silence_threshold = 20  # 600ms pause
+            self.min_speech_chunks = 10  # 300ms min
+            self.max_recording_duration = 4  # 4s max
+            self.speech_timeout = 100  # ~3s max utterance
             self.sensitivity_mode = "Ultra-Fast"
+            self.vad_level = 2
+            self.vad.set_mode(self.vad_level)
             self.ui_message = "⚡ Ultra-Fast Mode - Optimized performance"
         elif direction == '0':
-            # Balanced mode
-            self.silence_threshold = 10
-            self.min_speech_chunks = 8
+            # Balanced mode - natural conversation
+            self.silence_threshold = 25  # 750ms pause
+            self.min_speech_chunks = 10  # 300ms min
+            self.max_recording_duration = 5  # 5s max
+            self.speech_timeout = 100  # ~3s max utterance
             self.sensitivity_mode = "Balanced"
+            self.vad_level = 2
+            self.vad.set_mode(self.vad_level)
             self.ui_message = "⚖️ Balanced Mode - Reliable detection"
 
         self.ui_message_time = time.time()
