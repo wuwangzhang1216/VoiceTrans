@@ -55,6 +55,7 @@
 # Clone and install
 git clone https://github.com/wuwangzhang1216/VoiceTrans.git
 cd VoiceTrans
+chmod +x install.sh  # Make install script executable
 ./install.sh
 
 # Run interactive setup
