@@ -108,10 +108,10 @@ python voicetrans/app.py
    - Sign up for free, no credit card required
    - Provides ultra-fast transcription (23x faster than OpenAI)
 
-2. **OpenAI API Key** (optional, for translation):
-   - Get your key at: https://platform.openai.com/settings/
-   - Required only if you want translation features
-   - Uses GPT models for accurate context-aware translation
+2. **Google Gemini API Key** (for translation):
+   - Get your free key at: https://aistudio.google.com/apikey
+   - Sign up for free, no credit card required
+   - Uses Gemini 2.5 Flash Lite Preview for fast, cost-effective translation
 
 **Option A: Interactive Setup (Easiest)**
 ```bash
@@ -132,8 +132,8 @@ nano config.json  # or use your preferred editor
 # For transcription (Fireworks AI recommended for speed)
 export FIREWORKS_API_KEY="your-fireworks-key"
 
-# For translation (Optional, uses OpenAI GPT-5)
-export OPENAI_API_KEY="your-openai-key"
+# For translation (Google Gemini)
+export GEMINI_API_KEY="your-gemini-key"
 ```
 
 ### Usage
@@ -161,7 +161,7 @@ vtrans --setup
 vtrans --config
 
 # With custom API keys
-vtrans --fireworks-key "your-key" --openai-key "your-key"
+vtrans --fireworks-key "your-key" --gemini-key "your-key"
 ```
 
 VoiceTrans will look for `config.json` in your current directory first, allowing you to have different configurations for different projects.
@@ -222,7 +222,7 @@ VoiceTrans tracks comprehensive performance metrics:
 
 ### Architecture
 - **Transcription**: Whisper v3 via Fireworks AI (23x faster than OpenAI)
-- **Translation**: GPT-5 nano for accurate context-aware translation
+- **Translation**: Google Gemini 2.5 Flash Lite Preview for fast, cost-effective translation
 - **Audio**: PyAudio with WebRTC VAD for robust speech detection
 - **UI**: Rich terminal interface with 10fps refresh rate
 
@@ -331,7 +331,7 @@ MIT License - see LICENSE file for details
 ## 🙏 Acknowledgments
 
 - Powered by Whisper v3 for transcription
-- GPT-5 for translation
+- Google Gemini for translation
 - WebRTC VAD for voice detection
 - Rich library for terminal UI
 

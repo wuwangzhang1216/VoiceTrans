@@ -34,11 +34,15 @@ setup(
     python_requires=">=3.8",
     install_requires=[
         "setuptools",  # Required for pkg_resources in Python 3.13
-        "openai>=1.0.0",
+        "openai>=1.0.0",  # For Fireworks AI transcription
+        "google-genai>=0.1.0",  # For Google Gemini translation
         "pyaudio>=0.2.11",
         "webrtcvad>=2.0.10",
         "rich>=13.0.0",
         "numpy>=1.20.0",
+        "pynput>=1.7.0",
+        "websocket-client>=1.0.0",
+        "certifi",
     ],
     entry_points={
         "console_scripts": [

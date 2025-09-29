@@ -69,6 +69,7 @@ install_dependencies_stepwise() {
     # Install non-problematic dependencies first
     echo "  Installing core dependencies..."
     pip install "openai>=1.0.0"
+    pip install "google-genai>=0.1.0"
     pip install "numpy>=1.20.0"
     pip install "rich>=13.0.0"
     pip install "webrtcvad>=2.0.10"

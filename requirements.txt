@@ -1,6 +1,7 @@
 # Core dependencies
 setuptools  # Required for pkg_resources in Python 3.13
-openai>=1.0.0
+openai>=1.0.0  # For Fireworks AI transcription
+google-genai>=0.1.0  # For Google Gemini translation
 pyaudio>=0.2.11
 numpy>=1.20.0
 rich>=13.0.0

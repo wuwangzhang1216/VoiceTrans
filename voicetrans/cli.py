@@ -32,8 +32,10 @@ Examples:
                        help='UI theme')
     parser.add_argument('--fireworks-key',
                        help='Fireworks API key')
+    parser.add_argument('--gemini-key',
+                       help='Google Gemini API key for translation')
     parser.add_argument('--openai-key',
-                       help='OpenAI API key for translation')
+                       help='[Deprecated] Use --gemini-key instead')
     parser.add_argument('--turbo',
                        action='store_true',
                        default=None,
@@ -76,8 +78,11 @@ Examples:
     # Set API keys if provided
     if args.fireworks_key:
         os.environ['FIREWORKS_API_KEY'] = args.fireworks_key
-    if args.openai_key:
-        os.environ['OPENAI_API_KEY'] = args.openai_key
+    if args.gemini_key:
+        os.environ['GEMINI_API_KEY'] = args.gemini_key
+    elif args.openai_key:  # Backward compatibility
+        os.environ['GEMINI_API_KEY'] = args.openai_key
+        print("Warning: --openai-key is deprecated. Please use --gemini-key instead.")
 
     # Import and run the main app
     from voicetrans.app import FireworksVoiceTranslator
@@ -129,13 +134,15 @@ def run_setup():
 
     # Get Fireworks API key
     print("\n1. Fireworks API Key (for transcription)")
-    print("   Get your free key at: https://fireworks.ai")
+    print("   Get your free key at: https://app.fireworks.ai/settings/users/api-keys")
+    print("   (Sign up for free, no credit card required)")
     fireworks_key = input("   Enter your Fireworks API key: ").strip()
 
-    # Get OpenAI API key
-    print("\n2. OpenAI API Key (optional, for translation)")
-    print("   Get your key at: https://platform.openai.com")
-    openai_key = input("   Enter your OpenAI API key (or press Enter to skip): ").strip()
+    # Get Gemini API key
+    print("\n2. Google Gemini API Key (for translation)")
+    print("   Get your free key at: https://aistudio.google.com/apikey")
+    print("   (Free tier available, no credit card required)")
+    gemini_key = input("   Enter your Gemini API key (or press Enter to skip): ").strip()
 
     # Get preferences
     print("\n3. Default Settings")
@@ -156,7 +163,7 @@ def run_setup():
     # Create config
     config = {
         "fireworks_api_key": fireworks_key,
-        "openai_api_key": openai_key,
+        "gemini_api_key": gemini_key,
         "default_target_language": target_lang,
         "theme": theme,
         "sensitivity_mode": sensitivity,

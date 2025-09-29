@@ -26,6 +26,12 @@ import webrtcvad
 # Fireworks AI via OpenAI client
 from openai import OpenAI
 
+# Google Gemini for translation
+try:
+    from google import genai
+except ImportError:
+    genai = None
+
 # Advanced Terminal UI
 from rich.console import Console
 from rich.layout import Layout
@@ -121,7 +127,7 @@ class FireworksVoiceTranslator:
 
         # Fireworks Client
         self.fireworks_client = None
-        self.openai_client = None  # Backup for translation
+        self.gemini_client = None  # Google Gemini for translation
         self.api_status = "Not initialized"
         self.is_processing = False
         
@@ -168,7 +174,7 @@ class FireworksVoiceTranslator:
         
         # API keys
         self.fireworks_api_key = None
-        self.openai_api_key = None
+        self.gemini_api_key = None
 
     def load_config(self):
         """Load configuration from config.json if it exists"""
@@ -186,7 +192,7 @@ class FireworksVoiceTranslator:
         config_path = Path('config.json')
         config = {
             'fireworks_api_key': self.fireworks_api_key or '',
-            'openai_api_key': self.openai_api_key or '',
+            'gemini_api_key': self.gemini_api_key or '',
             'default_target_language': self.target_lang,
             'theme': 'dark' if self.theme == self.THEMES['dark'] else 'light',
             'sensitivity_mode': self.sensitivity_mode,
@@ -285,19 +291,34 @@ class FireworksVoiceTranslator:
                     progress.update(task, description="[yellow]⚠ No API key - transcription unavailable")
                     self.fireworks_client = None
 
-                # Try to get OpenAI API key for translation
+                # Try to get Gemini API key for translation
                 task = progress.add_task("[cyan]Setting up translation service...", total=None)
-                self.openai_api_key = os.getenv('OPENAI_API_KEY') or self.config.get('openai_api_key')
-                
-                if self.openai_api_key:
+                self.gemini_api_key = os.getenv('GEMINI_API_KEY') or self.config.get('gemini_api_key')
+
+                # Fallback to OpenAI key for backward compatibility
+                if not self.gemini_api_key:
+                    old_key = os.getenv('OPENAI_API_KEY') or self.config.get('openai_api_key')
+                    if old_key:
+                        self.gemini_api_key = old_key
+
+                if self.gemini_api_key and genai:
                     try:
-                        self.openai_client = OpenAI(api_key=self.openai_api_key)
-                        progress.update(task, description="[green]✓ Translation service ready (GPT-4)")
-                    except:
-                        progress.update(task, description="[yellow]⚠ Translation service unavailable")
-                        self.openai_client = None
+                        # Initialize Gemini client with API key
+                        self.gemini_client = genai.Client(api_key=self.gemini_api_key)
+                        # Test the API with a simple request
+                        test_response = self.gemini_client.models.generate_content(
+                            model="gemini-2.5-flash-lite-preview-09-2025",
+                            contents="Hello"
+                        )
+                        progress.update(task, description="[green]✓ Translation service ready (Gemini 2.5 Flash Lite)")
+                    except Exception as e:
+                        progress.update(task, description=f"[yellow]⚠ Translation unavailable: {str(e)[:30]}")
+                        self.gemini_client = None
                 else:
-                    progress.update(task, description="[yellow]⚠ No OpenAI key - translation disabled")
+                    if not genai:
+                        progress.update(task, description="[yellow]⚠ Google genai not installed - translation disabled")
+                    else:
+                        progress.update(task, description="[yellow]⚠ No Gemini API key - translation disabled")
 
                 # Initialize Audio
                 task = progress.add_task("[cyan]Initializing audio system...", total=None)
@@ -502,7 +523,7 @@ class FireworksVoiceTranslator:
                 
                 # Translation
                 translated = text
-                if self.openai_client:
+                if self.gemini_client:
                     try:
                         translation_future = self.executor.submit(
                             self._translate_text, text
@@ -577,25 +598,28 @@ class FireworksVoiceTranslator:
             self.is_processing = False
 
     def _translate_text(self, text):
-        """Translate text using GPT-4"""
-        if not self.openai_client:
+        """Translate text using Google Gemini"""
+        if not self.gemini_client:
             return text
-            
+
         try:
-            resp = self.openai_client.chat.completions.create(
-                model="gpt-4.1-nano",
-                messages=[
-                    {
-                        "role": "system", 
-                        "content": f"Translate to {self.LANGUAGES[self.target_lang][0]}. Output only the translation."
-                    },
-                    {"role": "user", "content": text}
-                ],
-                temperature=0.3,
-                max_tokens=200
+            # Create the translation prompt
+            prompt = f"Translate the following text to {self.LANGUAGES[self.target_lang][0]}. Output only the translation, nothing else:\n\n{text}"
+
+            # Use Gemini 2.5 Flash Lite Preview for fast translation
+            response = self.gemini_client.models.generate_content(
+                model="gemini-2.5-flash-lite-preview-09-2025",
+                contents=prompt
             )
-            return resp.choices[0].message.content.strip()
-        except:
+
+            # Extract the translated text
+            if response and response.text:
+                return response.text.strip()
+            return text
+        except Exception as e:
+            # Log error for debugging
+            self.ui_message = f"Translation error: {str(e)[:30]}"
+            self.ui_message_time = time.time()
             return text
 
     def save_to_file(self):
@@ -934,11 +958,10 @@ class FireworksVoiceTranslator:
             # Whisper-v3-large: $0.0015 per audio minute
             whisper_cost = (self.stats['total_audio_duration'] / 60) * 0.0015
 
-            # GPT-4.1 nano for translation (assume ~50 tokens per translation at $0.20/1M input, $0.80/1M output)
-            # Estimate: 30 input tokens + 30 output tokens per translation
-            gpt_input_cost = (self.stats['total_translations'] * 30 / 1_000_000) * 0.20
-            gpt_output_cost = (self.stats['total_translations'] * 30 / 1_000_000) * 0.80
-            translation_cost = gpt_input_cost + gpt_output_cost
+            # Gemini 2.5 Flash Lite Preview for translation (free tier up to certain limits)
+            # Gemini is much more cost-effective than GPT models
+            # Free tier: 15 RPM, generous token limits
+            translation_cost = 0.0  # Using free tier
 
             total_cost = whisper_cost + translation_cost
 
@@ -1184,9 +1207,9 @@ class FireworksVoiceTranslator:
 
                 # Cost calculation with new pricing
                 whisper_cost = (self.stats['total_audio_duration'] / 60) * 0.0015
-                gpt_input_cost = (self.stats['total_translations'] * 30 / 1_000_000) * 0.20
-                gpt_output_cost = (self.stats['total_translations'] * 30 / 1_000_000) * 0.80
-                total_cost = whisper_cost + gpt_input_cost + gpt_output_cost
+                # Gemini is free tier or minimal cost
+                translation_cost = 0.0  # Using free tier
+                total_cost = whisper_cost + translation_cost
                 self.console.print(f"  • Total cost: [green]${total_cost:.5f}[/]")
 
 def main():
@@ -1195,7 +1218,8 @@ def main():
     parser.add_argument('-t', '--target', default='zh', help='Target language code')
     parser.add_argument('--theme', default='dark', choices=['dark', 'light'], help='UI theme')
     parser.add_argument('--fireworks-key', help='Fireworks API key')
-    parser.add_argument('--openai-key', help='OpenAI API key for translation')
+    parser.add_argument('--gemini-key', help='Google Gemini API key for translation')
+    parser.add_argument('--openai-key', help='[Deprecated] Use --gemini-key instead')
     parser.add_argument('--turbo', action='store_true', default=True, help='Use turbo model (default: True)')
 
     args = parser.parse_args()
@@ -1203,8 +1227,11 @@ def main():
     # Set API keys if provided
     if args.fireworks_key:
         os.environ['FIREWORKS_API_KEY'] = args.fireworks_key
-    if args.openai_key:
-        os.environ['OPENAI_API_KEY'] = args.openai_key
+    if args.gemini_key:
+        os.environ['GEMINI_API_KEY'] = args.gemini_key
+    elif args.openai_key:  # Backward compatibility
+        os.environ['GEMINI_API_KEY'] = args.openai_key
+        print("Warning: --openai-key is deprecated. Please use --gemini-key instead.")
 
     app = FireworksVoiceTranslator(
         target=args.target,
