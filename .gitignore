@@ -42,3 +42,6 @@ voice_translation_*.txt
 *.tmp
 *.bak
 *.log
+
+# Files accidentally created by unquoted pip install commands
+=*

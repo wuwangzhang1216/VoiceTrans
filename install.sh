@@ -68,19 +68,19 @@ install_dependencies_stepwise() {
 
     # Install non-problematic dependencies first
     echo "  Installing core dependencies..."
-    pip install openai>=1.0.0
-    pip install numpy>=1.20.0
-    pip install rich>=13.0.0
-    pip install webrtcvad>=2.0.10
-    pip install pynput>=1.7.0
-    pip install websocket-client>=1.0.0
+    pip install "openai>=1.0.0"
+    pip install "numpy>=1.20.0"
+    pip install "rich>=13.0.0"
+    pip install "webrtcvad>=2.0.10"
+    pip install "pynput>=1.7.0"
+    pip install "websocket-client>=1.0.0"
     pip install certifi
 
     # Try to install PyAudio last (most likely to fail)
     echo "  Installing PyAudio (this may take a moment)..."
     if [[ "$IS_MACOS" == true ]]; then
         # On macOS, try with the environment variables set
-        if ! pip install pyaudio>=0.2.11; then
+        if ! pip install "pyaudio>=0.2.11"; then
             echo ""
             echo "⚠️  PyAudio installation failed. Trying alternative methods..."
 
@@ -97,7 +97,7 @@ install_dependencies_stepwise() {
         fi
     else
         # On Linux, just try pip
-        if ! pip install pyaudio>=0.2.11; then
+        if ! pip install "pyaudio>=0.2.11"; then
             echo "⚠️  PyAudio installation failed. You may need to install PortAudio:"
             echo "   Ubuntu/Debian: sudo apt-get install portaudio19-dev"
             echo "   Fedora: sudo dnf install portaudio-devel"
