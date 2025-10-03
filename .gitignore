@@ -45,3 +45,47 @@ voice_translation_*.txt
 
 # Files accidentally created by unquoted pip install commands
 =*
+
+# Web App - Backend
+web_app/backend/__pycache__/
+web_app/backend/*.pyc
+web_app/backend/venv/
+web_app/backend/.env
+web_app/backend/config.json
+
+# Web App - Frontend
+web_app/frontend/node_modules/
+web_app/frontend/dist/
+web_app/frontend/build/
+web_app/frontend/.env
+web_app/frontend/.env.local
+web_app/frontend/.env.production
+web_app/frontend/npm-debug.log*
+web_app/frontend/yarn-debug.log*
+web_app/frontend/yarn-error.log*
+web_app/frontend/package-lock.json
+web_app/frontend/yarn.lock
+
+# Web App - General
+web_app/.env
+web_app/docker-compose.override.yml
+web_app/.docker/
+
+# TypeScript
+web_app/frontend/*.tsbuildinfo
+web_app/frontend/*.d.ts.map
+
+# Testing
+web_app/frontend/coverage/
+web_app/backend/.pytest_cache/
+web_app/backend/.coverage
+web_app/backend/htmlcov/
+
+# Editor directories and files
+web_app/**/.idea
+web_app/**/.vscode
+web_app/**/*.suo
+web_app/**/*.ntvs*
+web_app/**/*.njsproj
+web_app/**/*.sln
+web_app/**/*.sw?

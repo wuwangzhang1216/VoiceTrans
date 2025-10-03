@@ -1,0 +1,19 @@
+# FastAPI Backend Requirements
+fastapi==0.115.11
+starlette==0.41.3
+uvicorn[standard]==0.32.0
+python-multipart==0.0.6
+websockets==12.0
+pydantic==2.11.9
+
+# Audio processing
+numpy==1.26.4
+wave
+pyaudio==0.2.14
+
+# AI APIs
+openai==1.58.1
+google-genai==0.8.0
+
+# Async support
+aiofiles==24.1.0

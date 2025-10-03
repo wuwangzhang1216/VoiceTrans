@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(echo $FIREWORKS_API_KEY)",
+      "Bash(npm run dev:*)",
+      "Bash(dir)",
+      "Bash(findstr:*)",
+      "Bash(netstat:*)",
+      "Bash(dir:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -48,7 +48,11 @@
 
 ## 🚀 Quick Start
 
-### Installation
+VoiceTrans offers two deployment options:
+1. **Terminal App** - Command-line interface for desktop use
+2. **Web App** - Modern web interface with luxury design
+
+### Terminal App Installation
 
 #### Option 1: Quick Install (Recommended)
 ```bash
@@ -166,7 +170,103 @@ vtrans --fireworks-key "your-key" --gemini-key "your-key"
 
 VoiceTrans will look for `config.json` in your current directory first, allowing you to have different configurations for different projects.
 
-## ⌨️ Keyboard Controls
+---
+
+## 🌐 Web Application
+
+### Features
+- 🎨 **Luxury Black & Gold Design** - Premium UI with elegant animations
+- 🎤 **Real-time Voice Translation** - Stream audio directly from your browser
+- 📊 **Translation History** - Timeline view with export functionality
+- 🌍 **Multi-language Support** - 19+ languages available
+- ⚡ **Ultra-low Latency** - WebSocket streaming for instant results
+- 📱 **Responsive Design** - Works on desktop and mobile devices
+
+### Quick Start (Web App)
+
+#### Option 1: Docker Deployment (Recommended)
+
+```bash
+# Navigate to web app directory
+cd web_app
+
+# Copy environment template
+cp .env.example .env
+
+# Edit .env and add your API keys
+# FIREWORKS_API_KEY=your_key_here
+# GEMINI_API_KEY=your_key_here
+
+# Start with Docker Compose
+docker-compose up -d
+
+# Access at http://localhost
+```
+
+#### Option 2: Local Development
+
+**Backend Setup:**
+```bash
+cd web_app/backend
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set API keys
+export FIREWORKS_API_KEY=your_key_here
+export GEMINI_API_KEY=your_key_here
+
+# Run backend server
+uvicorn main:app --reload --port 8000
+```
+
+**Frontend Setup (in a new terminal):**
+```bash
+cd web_app/frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Access at http://localhost:5173
+```
+
+### Using the Web App
+
+1. **Initial Setup**
+   - Click the ⚙️ Settings icon
+   - Enter your Fireworks and Gemini API keys
+   - Save configuration
+
+2. **Start Translating**
+   - Select target language from dropdown
+   - Click the golden "START" button
+   - Grant microphone permissions when prompted
+   - Speak clearly into your microphone
+   - View real-time translations in the elegant interface
+
+3. **Manage History**
+   - View recent translations in the timeline at the bottom
+   - Click "EXPORT" to download all translations as TXT
+   - Click "CLEAR" to remove all history
+
+### Web App Architecture
+- **Frontend**: React 18 + TypeScript + Tailwind CSS + Vite
+- **Backend**: FastAPI + WebSocket streaming
+- **Audio**: Web Audio API with AudioWorklet for low-latency processing
+- **Deployment**: Docker Compose with Nginx reverse proxy
+
+See [web_app/README.md](web_app/README.md) for detailed documentation.
+
+---
+
+## ⌨️ Keyboard Controls (Terminal App)
 
 | Key | Action | Description |
 |-----|--------|-------------|
