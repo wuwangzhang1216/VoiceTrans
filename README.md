@@ -3,6 +3,8 @@
 🚀 **Professional Real-time Voice Translator** - Ultra-low latency voice translation with advanced AI
 
 ## 📸 Interface Preview
+<img width="2652" height="1801" alt="image" src="https://github.com/user-attachments/assets/81143700-6582-40de-bd1c-02e86097d6c5" />
+
 
 <img width="1340" height="695" alt="image" src="https://github.com/user-attachments/assets/f6b57aa4-72b3-42a1-bf90-c38b455734dc" />
 
