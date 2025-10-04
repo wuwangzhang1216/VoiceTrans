@@ -295,13 +295,18 @@ async def websocket_endpoint(websocket: WebSocket):
 
                     latency = time.time() - start_time
 
+                    # Calculate processing speed (audio duration / processing time)
+                    audio_duration = len(audio_buffer) / (16000 * 2)  # 16kHz, 16-bit
+                    processing_speed = audio_duration / latency if latency > 0 else 1.0
+
                     # Send translation result
                     await websocket.send_json({
                         "type": "translation",
                         "transcription": transcription,
                         "translation": translation,
                         "timestamp": datetime.now().isoformat(),
-                        "latency": latency
+                        "latency": latency,
+                        "processing_speed": processing_speed
                     })
 
                     # Clear buffer
