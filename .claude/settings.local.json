@@ -56,7 +56,9 @@
       "Bash(rm:*)",
       "Bash(aws elasticbeanstalk delete-application:*)",
       "Bash(aws ec2 describe-instances:*)",
-      "Bash(aws ec2 describe-security-groups:*)"
+      "Bash(aws ec2 describe-security-groups:*)",
+      "Bash(aws amplify:*)",
+      "Bash(aws s3 mb:*)"
     ],
     "deny": [],
     "ask": []

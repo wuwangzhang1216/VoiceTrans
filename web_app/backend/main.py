@@ -15,6 +15,7 @@ from typing import Optional, Dict, Any, List
 
 from fastapi import FastAPI, WebSocket, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 # Try imports with fallbacks
@@ -228,6 +229,14 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         print(f"WebSocket error: {e}")
         await websocket.close()
+
+# Mount static files (frontend) - must be last
+frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+if frontend_dist.exists():
+    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="static")
+    print(f"Serving frontend from: {frontend_dist}")
+else:
+    print(f"Warning: Frontend dist directory not found at {frontend_dist}")
 
 if __name__ == "__main__":
     import uvicorn
