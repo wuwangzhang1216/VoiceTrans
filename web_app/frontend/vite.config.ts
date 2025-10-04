@@ -17,5 +17,21 @@ export default defineConfig({
         ws: true
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        assetFileNames: (assetInfo) => {
+          // Keep worklet files separate for proper loading
+          if (assetInfo.name && assetInfo.name.includes('processor')) {
+            return 'assets/[name]-[hash][extname]'
+          }
+          return 'assets/[name]-[hash][extname]'
+        }
+      }
+    }
+  },
+  worker: {
+    format: 'es'
   }
 })

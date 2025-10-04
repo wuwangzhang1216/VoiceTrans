@@ -583,9 +583,39 @@ export function LuxuryTranslator({
       }, 100)
 
       console.log('Loading audio worklet...')
-      await audioContext.audioWorklet.addModule(
-        new URL('../audio/pcm-processor.ts', import.meta.url),
-      )
+      // Create worklet as inline blob for deployment compatibility
+      const workletCode = `
+        class PCMProcessor extends AudioWorkletProcessor {
+          process(inputs) {
+            const [input] = inputs
+            if (!input || input.length === 0) {
+              return true
+            }
+
+            const channelData = input[0]
+            if (!channelData) {
+              return true
+            }
+
+            const buffer = new ArrayBuffer(channelData.length * 2)
+            const view = new DataView(buffer)
+
+            for (let i = 0; i < channelData.length; i++) {
+              const sample = Math.max(-1, Math.min(1, channelData[i]))
+              view.setInt16(i * 2, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true)
+            }
+
+            this.port.postMessage({ buffer }, [buffer])
+            return true
+          }
+        }
+
+        registerProcessor('pcm-processor', PCMProcessor)
+      `
+      const blob = new Blob([workletCode], { type: 'application/javascript' })
+      const workletUrl = URL.createObjectURL(blob)
+      await audioContext.audioWorklet.addModule(workletUrl)
+      URL.revokeObjectURL(workletUrl)
 
       console.log('Creating audio worklet node...')
       const workletNode = new AudioWorkletNode(audioContext, 'pcm-processor', {
