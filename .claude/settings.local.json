@@ -58,7 +58,8 @@
       "Bash(aws ec2 describe-instances:*)",
       "Bash(aws ec2 describe-security-groups:*)",
       "Bash(aws amplify:*)",
-      "Bash(aws s3 mb:*)"
+      "Bash(aws s3 mb:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

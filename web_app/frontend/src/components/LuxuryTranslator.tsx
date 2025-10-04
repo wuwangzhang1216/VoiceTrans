@@ -159,6 +159,8 @@ export function LuxuryTranslator({
 
   const [status, setStatus] = useState('Disconnected')
 
+  const [backendInitialized, setBackendInitialized] = useState(false)
+
   const [isProcessing, setIsProcessing] = useState(false)
 
   const [stats, setStats] = useState({
@@ -191,6 +193,20 @@ export function LuxuryTranslator({
   useEffect(() => {
     selectedLanguageRef.current = selectedLanguage
   }, [selectedLanguage])
+
+  // Check backend initialization status
+  useEffect(() => {
+    const checkBackend = async () => {
+      try {
+        const response = await fetch('/api')
+        const data = await response.json()
+        setBackendInitialized(data.initialized || false)
+      } catch (error) {
+        console.error('Failed to check backend status:', error)
+      }
+    }
+    checkBackend()
+  }, [])
 
   // Cleanup on unmount
 
@@ -668,7 +684,8 @@ export function LuxuryTranslator({
     setStatus('Stopped')
   }
 
-  const isConfigured = apiConfig.fireworks_api_key && apiConfig.gemini_api_key
+  // Check if backend is initialized OR if local API keys are configured
+  const isConfigured = backendInitialized || (apiConfig.fireworks_api_key && apiConfig.gemini_api_key)
   const activeTranslation =
     translations.find((t) => t.isActive) ||
     translations[translations.length - 1]
