@@ -144,6 +144,13 @@ async def startup_event():
     else:
         print("Warning: No API keys found in environment variables")
 
+    # Debug frontend path
+    frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+    print(f"[STARTUP] Looking for frontend at: {frontend_dist.absolute()}")
+    print(f"[STARTUP] Frontend exists: {frontend_dist.exists()}")
+    print(f"[STARTUP] Current working directory: {os.getcwd()}")
+    print(f"[STARTUP] __file__ location: {Path(__file__).absolute()}")
+
 # API Endpoints
 @app.get("/api")
 async def root():
