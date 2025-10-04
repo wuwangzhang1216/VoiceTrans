@@ -230,10 +230,42 @@ async def websocket_endpoint(websocket: WebSocket):
         print(f"WebSocket error: {e}")
         await websocket.close()
 
-# Mount static files (frontend) - must be last
+# Serve static files for frontend
+from fastapi.responses import FileResponse
+
 frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+
+# Serve static assets (CSS, JS, images, etc.)
 if frontend_dist.exists():
-    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="static")
+    # Mount assets folder for CSS/JS
+    if (frontend_dist / "assets").exists():
+        app.mount("/assets", StaticFiles(directory=str(frontend_dist / "assets")), name="assets")
+
+    # Serve specific static files
+    @app.get("/favicon.svg")
+    async def favicon():
+        return FileResponse(frontend_dist / "favicon.svg")
+
+    @app.get("/logo.svg")
+    async def logo():
+        return FileResponse(frontend_dist / "logo.svg")
+
+    # Serve index.html for root and all other routes (SPA)
+    @app.get("/")
+    async def root_frontend():
+        """Serve frontend index at root"""
+        return FileResponse(frontend_dist / "index.html")
+
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        """Serve frontend for all non-API routes"""
+        # Check if it's a file request
+        file_path = frontend_dist / full_path
+        if file_path.is_file():
+            return FileResponse(file_path)
+        # Otherwise serve index.html for SPA routing
+        return FileResponse(frontend_dist / "index.html")
+
     print(f"Serving frontend from: {frontend_dist}")
 else:
     print(f"Warning: Frontend dist directory not found at {frontend_dist}")
