@@ -1,0 +1,37 @@
+name: Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web_app/frontend/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install and Build
+        working-directory: ./web_app/frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ./web_app/frontend/dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
