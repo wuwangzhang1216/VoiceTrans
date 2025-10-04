@@ -271,7 +271,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     if service.fireworks_client:
                         try:
                             response = service.fireworks_client.audio.transcriptions.create(
-                                model="whisper-v3-turbo",
+                                model="whisper-v3",
                                 file=("audio.wav", wav_buffer.getvalue(), "audio/wav")
                             )
                             transcription = response.text
@@ -281,9 +281,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
                     # Translate with Gemini
                     translation = ""
-                    if service.gemini_client and transcription:
+                    if service.gemini_client and transcription and transcription != "[Transcription failed]":
                         try:
-                            target_lang = service.SUPPORTED_LANGUAGES.get(target_language, (target_language, ''))[0]
+                            target_lang = service.LANGUAGES.get(target_language, (target_language, ''))[0]
                             response = service.gemini_client.models.generate_content(
                                 model='gemini-2.0-flash-exp',
                                 contents=f"Translate the following text to {target_lang}: {transcription}"
