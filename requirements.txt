@@ -1,19 +1,13 @@
-# Core dependencies
-setuptools  # Required for pkg_resources in Python 3.13
-openai>=1.0.0  # For Fireworks AI transcription
-google-genai>=0.1.0  # For Google Gemini translation
-pyaudio>=0.2.11
-numpy>=1.20.0
-rich>=13.0.0
+# FastAPI Backend Requirements
+fastapi==0.115.11
+starlette==0.41.3
+uvicorn[standard]==0.32.0
+python-multipart==0.0.6
+websockets==12.0
+pydantic==2.11.9
 
-# Voice Activity Detection
-webrtcvad>=2.0.10
+# AI APIs
+google-generativeai
 
-# Hotkey support
-pynput>=1.7.0
-
-# WebSocket support
-websocket-client>=1.0.0
-
-# SSL support (usually included, but explicitly listed)
-certifi
+# Async support
+aiofiles==24.1.0
