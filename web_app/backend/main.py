@@ -153,6 +153,11 @@ async def get_languages():
         for code, info in service.LANGUAGES.items()
     ]
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for load balancer"""
+    return {"status": "healthy"}
+
 @app.get("/stats")
 async def get_stats():
     """Get translation statistics"""
