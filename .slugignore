@@ -1,0 +1,6 @@
+# Don't include these in the slug
+web_app/frontend/node_modules
+web_app/frontend/src
+*.md
+.git
+.github

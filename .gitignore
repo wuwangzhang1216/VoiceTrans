@@ -55,11 +55,11 @@ web_app/backend/config.json
 
 # Web App - Frontend
 web_app/frontend/node_modules/
-web_app/frontend/dist/
+# web_app/frontend/dist/  # Allow dist for Heroku deployment
 web_app/frontend/build/
 web_app/frontend/.env
 web_app/frontend/.env.local
-web_app/frontend/.env.production
+# web_app/frontend/.env.production  # Allow for Heroku deployment
 web_app/frontend/npm-debug.log*
 web_app/frontend/yarn-debug.log*
 web_app/frontend/yarn-error.log*

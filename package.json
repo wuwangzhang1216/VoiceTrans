@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "description": "VoiceTrans Web Application",
   "scripts": {
-    "heroku-postbuild": "cd web_app/frontend && npm install && npm run build",
+    "heroku-postbuild": "cd web_app/frontend && npm install && npm run build && ls -la dist",
     "start": "echo 'Backend will be started by Procfile'"
   },
   "engines": {
     "node": "20.x",
     "npm": "10.x"
-  }
+  },
+  "heroku-run-build-script": true
 }
