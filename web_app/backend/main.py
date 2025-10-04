@@ -228,120 +228,134 @@ async def translate_audio(
 
 @app.websocket("/api/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    """WebSocket endpoint for real-time audio streaming"""
+    """WebSocket endpoint for continuous audio streaming"""
     from starlette.websockets import WebSocketDisconnect
-    import struct
 
     await websocket.accept()
 
-    # Send connected message
-    await websocket.send_json({"type": "connected", "message": "WebSocket connected"})
-
+    # Audio buffer for continuous processing
     audio_buffer = bytearray()
+    target_language = "zh"
     last_process_time = time.time()
-    silence_threshold = 0.01  # Threshold for detecting silence
-    min_audio_duration = 3.0  # Minimum 3 seconds of audio before processing
-    max_audio_duration = 10.0  # Maximum 10 seconds before forcing processing
+    min_audio_length = int(16000 * 2 * 2.0)  # 2 seconds minimum (16kHz * 2 bytes * duration)
+    max_audio_length = int(16000 * 2 * 5.0)  # 5 seconds maximum
+    overlap_size = int(16000 * 2 * 0.5)  # 0.5 second overlap
 
     try:
+        # Send initial connection message
+        await websocket.send_json({
+            "type": "connected",
+            "message": "Continuous streaming ready",
+            "initialized": service.is_initialized
+        })
+
         while True:
+            # Receive message from client
             data = await websocket.receive_text()
             message = json.loads(data)
 
             if message.get("type") == "audio":
-                # Accumulate audio data
-                audio_data = message.get("data", "")
-                target_language = message.get("target_language", "en")
+                # Handle audio data
+                audio_base64 = message.get("data")
+                new_target = message.get("target_language")
 
-                # Decode base64 audio
-                audio_bytes = base64.b64decode(audio_data)
-                audio_buffer.extend(audio_bytes)
+                # Update target language
+                if new_target:
+                    target_language = new_target
 
-                # Calculate current buffer duration
-                buffer_duration = len(audio_buffer) / (16000 * 2)  # 16kHz, 16-bit (2 bytes per sample)
+                if audio_base64:
+                    # Decode base64 audio
+                    audio_bytes = base64.b64decode(audio_base64)
+                    audio_buffer.extend(audio_bytes)
 
-                # Check if we should process
-                should_process = False
+                    current_time = time.time()
+                    time_since_last = current_time - last_process_time
 
-                # Force process if buffer is too long
-                if buffer_duration >= max_audio_duration:
-                    should_process = True
+                    # Check if we should process
+                    should_process = False
 
-                # Process if we have minimum duration and detect silence
-                elif buffer_duration >= min_audio_duration:
-                    # Check last 0.5 seconds for silence
-                    check_samples = min(16000, len(audio_bytes) // 2)  # 0.5 seconds or less
-                    if check_samples > 0:
-                        # Calculate RMS energy of recent audio
-                        recent_audio = audio_bytes[-check_samples*2:]
-                        samples = struct.unpack(f'<{len(recent_audio)//2}h', recent_audio)
-                        rms = (sum(s*s for s in samples) / len(samples)) ** 0.5
-                        normalized_rms = rms / 32768.0  # Normalize to 0-1
+                    # Process if we have at least 2 seconds of audio and 1.5 seconds have passed
+                    if len(audio_buffer) >= min_audio_length and time_since_last >= 1.5:
+                        should_process = True
+                    # Or if buffer is getting too large (5 seconds)
+                    elif len(audio_buffer) >= max_audio_length:
+                        should_process = True
 
-                        # If recent audio is silent, process what we have
-                        if normalized_rms < silence_threshold:
-                            should_process = True
+                    if should_process:
+                        # Take chunk for processing
+                        chunk_size = min(len(audio_buffer), max_audio_length)
+                        audio_chunk = bytes(audio_buffer[:chunk_size])
 
-                if should_process and len(audio_buffer) > 16000:  # At least 0.5 seconds
-                    await websocket.send_json({"type": "processing"})
+                        # Keep some overlap for continuity
+                        if len(audio_buffer) > overlap_size:
+                            audio_buffer = audio_buffer[chunk_size - overlap_size:]
+                        else:
+                            audio_buffer.clear()
 
-                    start_time = time.time()
+                        last_process_time = current_time
 
-                    # Create WAV file in memory
-                    wav_buffer = io.BytesIO()
-                    with wave.open(wav_buffer, 'wb') as wav_file:
-                        wav_file.setnchannels(1)
-                        wav_file.setsampwidth(2)  # 16-bit
-                        wav_file.setframerate(16000)
-                        wav_file.writeframes(bytes(audio_buffer))
+                        # Send processing notification
+                        await websocket.send_json({
+                            "type": "processing",
+                            "message": "Processing audio..."
+                        })
 
-                    wav_buffer.seek(0)
+                        # Process audio
+                        start_time = time.time()
 
-                    # Transcribe with Fireworks
-                    transcription = ""
-                    if service.fireworks_client:
-                        try:
-                            response = service.fireworks_client.audio.transcriptions.create(
-                                model="whisper-v3",
-                                file=("audio.wav", wav_buffer.getvalue(), "audio/wav")
-                            )
-                            transcription = response.text
-                        except Exception as e:
-                            print(f"Transcription error: {e}")
-                            transcription = "[Transcription failed]"
+                        # Create WAV file in memory
+                        wav_buffer = io.BytesIO()
+                        with wave.open(wav_buffer, 'wb') as wav_file:
+                            wav_file.setnchannels(1)
+                            wav_file.setsampwidth(2)  # 16-bit
+                            wav_file.setframerate(16000)
+                            wav_file.writeframes(audio_chunk)
 
-                    # Translate with Gemini
-                    translation = ""
-                    if service.gemini_client and transcription and transcription != "[Transcription failed]":
-                        try:
-                            target_lang = service.LANGUAGES.get(target_language, (target_language, ''))[0]
-                            response = service.gemini_client.models.generate_content(
-                                model='gemini-2.0-flash-exp',
-                                contents=f"Translate the following text to {target_lang}: {transcription}"
-                            )
-                            translation = response.text
-                        except Exception as e:
-                            print(f"Translation error: {e}")
-                            translation = "[Translation failed]"
+                        wav_buffer.seek(0)
 
-                    latency = time.time() - start_time
+                        # Transcribe with Fireworks
+                        transcription = ""
+                        if service.fireworks_client:
+                            try:
+                                response = service.fireworks_client.audio.transcriptions.create(
+                                    model="whisper-v3",
+                                    file=("audio.wav", wav_buffer.getvalue(), "audio/wav")
+                                )
+                                transcription = response.text.strip()
+                            except Exception as e:
+                                print(f"Transcription error: {e}")
+                                transcription = ""
 
-                    # Calculate processing speed (audio duration / processing time)
-                    audio_duration = len(audio_buffer) / (16000 * 2)  # 16kHz, 16-bit
-                    processing_speed = audio_duration / latency if latency > 0 else 1.0
+                        # Translate with Gemini if we have transcription
+                        translation = ""
+                        if service.gemini_client and transcription:
+                            try:
+                                target_lang = service.LANGUAGES.get(target_language, (target_language, ''))[0]
+                                prompt = f"Translate this to {target_lang}, output only the translation: {transcription}"
+                                response = service.gemini_client.models.generate_content(
+                                    model='gemini-2.0-flash-exp',
+                                    contents=prompt
+                                )
+                                translation = response.text.strip()
+                            except Exception as e:
+                                print(f"Translation error: {e}")
+                                translation = transcription
 
-                    # Send translation result
-                    await websocket.send_json({
-                        "type": "translation",
-                        "transcription": transcription,
-                        "translation": translation,
-                        "timestamp": datetime.now().isoformat(),
-                        "latency": latency,
-                        "processing_speed": processing_speed
-                    })
+                        # Only send if we have valid transcription
+                        if transcription:
+                            latency = time.time() - start_time
+                            audio_duration = len(audio_chunk) / (16000 * 2)
+                            processing_speed = audio_duration / latency if latency > 0 else 1.0
 
-                    # Clear buffer
-                    audio_buffer.clear()
+                            # Send translation result
+                            await websocket.send_json({
+                                "type": "translation",
+                                "transcription": transcription,
+                                "translation": translation or transcription,
+                                "timestamp": datetime.now().isoformat(),
+                                "latency": latency,
+                                "processing_speed": processing_speed
+                            })
 
     except WebSocketDisconnect:
         print("WebSocket disconnected normally")
