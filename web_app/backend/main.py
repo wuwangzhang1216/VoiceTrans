@@ -9,6 +9,7 @@ import asyncio
 import io
 import wave
 import time
+import base64
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any, List
@@ -229,10 +230,83 @@ async def translate_audio(
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time audio streaming"""
     await websocket.accept()
+
+    # Send connected message
+    await websocket.send_json({"type": "connected", "message": "WebSocket connected"})
+
+    audio_buffer = bytearray()
+
     try:
         while True:
             data = await websocket.receive_text()
-            await websocket.send_text(f"Echo: {data}")
+            message = json.loads(data)
+
+            if message.get("type") == "audio":
+                # Accumulate audio data
+                audio_data = message.get("data", "")
+                target_language = message.get("target_language", "en")
+
+                # Decode base64 audio
+                audio_bytes = base64.b64decode(audio_data)
+                audio_buffer.extend(audio_bytes)
+
+                # Process when we have enough data (e.g., 1 second of audio at 16kHz = 32KB)
+                if len(audio_buffer) >= 32000:
+                    await websocket.send_json({"type": "processing"})
+
+                    start_time = time.time()
+
+                    # Create WAV file in memory
+                    wav_buffer = io.BytesIO()
+                    with wave.open(wav_buffer, 'wb') as wav_file:
+                        wav_file.setnchannels(1)
+                        wav_file.setsampwidth(2)  # 16-bit
+                        wav_file.setframerate(16000)
+                        wav_file.writeframes(bytes(audio_buffer))
+
+                    wav_buffer.seek(0)
+
+                    # Transcribe with Fireworks
+                    transcription = ""
+                    if service.fireworks_client:
+                        try:
+                            response = service.fireworks_client.audio.transcriptions.create(
+                                model="whisper-v3-turbo",
+                                file=("audio.wav", wav_buffer.getvalue(), "audio/wav")
+                            )
+                            transcription = response.text
+                        except Exception as e:
+                            print(f"Transcription error: {e}")
+                            transcription = "[Transcription failed]"
+
+                    # Translate with Gemini
+                    translation = ""
+                    if service.gemini_client and transcription:
+                        try:
+                            target_lang = service.SUPPORTED_LANGUAGES.get(target_language, (target_language, ''))[0]
+                            response = service.gemini_client.models.generate_content(
+                                model='gemini-2.0-flash-exp',
+                                contents=f"Translate the following text to {target_lang}: {transcription}"
+                            )
+                            translation = response.text
+                        except Exception as e:
+                            print(f"Translation error: {e}")
+                            translation = "[Translation failed]"
+
+                    latency = time.time() - start_time
+
+                    # Send translation result
+                    await websocket.send_json({
+                        "type": "translation",
+                        "transcription": transcription,
+                        "translation": translation,
+                        "timestamp": datetime.now().isoformat(),
+                        "latency": latency
+                    })
+
+                    # Clear buffer
+                    audio_buffer.clear()
+
     except Exception as e:
         print(f"WebSocket error: {e}")
         await websocket.close()
