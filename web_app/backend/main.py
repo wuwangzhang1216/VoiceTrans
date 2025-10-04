@@ -238,7 +238,7 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
 
 # Serve static files for frontend
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 
 # Calculate frontend path - try multiple locations
 frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
@@ -264,6 +264,15 @@ if frontend_dist.exists():
     @app.get("/logo.svg")
     async def logo():
         return FileResponse(frontend_dist / "logo.svg")
+
+    # Handle common missing files to prevent 404 errors
+    @app.get("/manifest.json")
+    async def manifest():
+        return {"name": "VoiceTrans", "short_name": "VoiceTrans", "start_url": "/"}
+
+    @app.get("/robots.txt")
+    async def robots():
+        return Response(content="User-agent: *\nAllow: /", media_type="text/plain")
 
     # Serve index.html for root and all other routes (SPA)
     @app.get("/")
