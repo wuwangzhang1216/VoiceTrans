@@ -233,7 +233,15 @@ async def websocket_endpoint(websocket: WebSocket):
 # Serve static files for frontend
 from fastapi.responses import FileResponse
 
+# Calculate frontend path - try multiple locations
 frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+print(f"Looking for frontend at: {frontend_dist.absolute()}")
+print(f"Frontend exists: {frontend_dist.exists()}")
+
+# List parent directory to debug
+parent = Path(__file__).parent.parent
+if parent.exists():
+    print(f"Parent directory contents: {list(parent.iterdir())}")
 
 # Serve static assets (CSS, JS, images, etc.)
 if frontend_dist.exists():
@@ -266,9 +274,9 @@ if frontend_dist.exists():
         # Otherwise serve index.html for SPA routing
         return FileResponse(frontend_dist / "index.html")
 
-    print(f"Serving frontend from: {frontend_dist}")
+    print(f"✅ Serving frontend from: {frontend_dist}")
 else:
-    print(f"Warning: Frontend dist directory not found at {frontend_dist}")
+    print(f"❌ Warning: Frontend dist directory not found at {frontend_dist}")
 
 if __name__ == "__main__":
     import uvicorn
