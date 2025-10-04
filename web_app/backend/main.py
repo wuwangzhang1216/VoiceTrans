@@ -229,6 +229,8 @@ async def translate_audio(
 @app.websocket("/api/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time audio streaming"""
+    from starlette.websockets import WebSocketDisconnect
+
     await websocket.accept()
 
     # Send connected message
@@ -312,9 +314,10 @@ async def websocket_endpoint(websocket: WebSocket):
                     # Clear buffer
                     audio_buffer.clear()
 
+    except WebSocketDisconnect:
+        print("WebSocket disconnected normally")
     except Exception as e:
         print(f"WebSocket error: {e}")
-        await websocket.close()
 
 # Serve static files for frontend
 from fastapi.responses import FileResponse, Response
