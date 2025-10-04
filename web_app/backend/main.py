@@ -127,6 +127,22 @@ class SimpleTranslationService:
 # Create service instance
 service = SimpleTranslationService()
 
+# Initialize with environment variables on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize API with environment variables on startup"""
+    fireworks_key = os.getenv("FIREWORKS_API_KEY")
+    gemini_key = os.getenv("GEMINI_API_KEY")
+
+    if fireworks_key or gemini_key:
+        service.initialize(
+            fireworks_key=fireworks_key,
+            gemini_key=gemini_key
+        )
+        print(f"Service initialized on startup: fireworks={bool(fireworks_key)}, gemini={bool(gemini_key)}")
+    else:
+        print("Warning: No API keys found in environment variables")
+
 # API Endpoints
 @app.get("/")
 async def root():
