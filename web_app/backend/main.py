@@ -230,6 +230,7 @@ async def translate_audio(
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time audio streaming"""
     from starlette.websockets import WebSocketDisconnect
+    import struct
 
     await websocket.accept()
 
@@ -237,6 +238,10 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.send_json({"type": "connected", "message": "WebSocket connected"})
 
     audio_buffer = bytearray()
+    last_process_time = time.time()
+    silence_threshold = 0.01  # Threshold for detecting silence
+    min_audio_duration = 3.0  # Minimum 3 seconds of audio before processing
+    max_audio_duration = 10.0  # Maximum 10 seconds before forcing processing
 
     try:
         while True:
@@ -252,8 +257,32 @@ async def websocket_endpoint(websocket: WebSocket):
                 audio_bytes = base64.b64decode(audio_data)
                 audio_buffer.extend(audio_bytes)
 
-                # Process when we have enough data (e.g., 1 second of audio at 16kHz = 32KB)
-                if len(audio_buffer) >= 32000:
+                # Calculate current buffer duration
+                buffer_duration = len(audio_buffer) / (16000 * 2)  # 16kHz, 16-bit (2 bytes per sample)
+
+                # Check if we should process
+                should_process = False
+
+                # Force process if buffer is too long
+                if buffer_duration >= max_audio_duration:
+                    should_process = True
+
+                # Process if we have minimum duration and detect silence
+                elif buffer_duration >= min_audio_duration:
+                    # Check last 0.5 seconds for silence
+                    check_samples = min(16000, len(audio_bytes) // 2)  # 0.5 seconds or less
+                    if check_samples > 0:
+                        # Calculate RMS energy of recent audio
+                        recent_audio = audio_bytes[-check_samples*2:]
+                        samples = struct.unpack(f'<{len(recent_audio)//2}h', recent_audio)
+                        rms = (sum(s*s for s in samples) / len(samples)) ** 0.5
+                        normalized_rms = rms / 32768.0  # Normalize to 0-1
+
+                        # If recent audio is silent, process what we have
+                        if normalized_rms < silence_threshold:
+                            should_process = True
+
+                if should_process and len(audio_buffer) > 16000:  # At least 0.5 seconds
                     await websocket.send_json({"type": "processing"})
 
                     start_time = time.time()
