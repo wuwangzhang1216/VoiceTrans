@@ -422,15 +422,20 @@ export function LuxuryTranslator({
   const connectWebSocket = useCallback(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
 
-    const wsHost = import.meta.env.VITE_WS_HOST || window.location.hostname
+    const customPath = import.meta.env.VITE_WS_URL
 
-    const wsPort = import.meta.env.VITE_WS_PORT || '8000'
+    let wsUrl: string
+    if (customPath) {
+      // Use custom path with current host
+      wsUrl = `${protocol}//${window.location.host}${customPath}`
+    } else {
+      // Development fallback
+      const wsHost = import.meta.env.VITE_WS_HOST || window.location.hostname
+      const wsPort = import.meta.env.VITE_WS_PORT || '8000'
+      wsUrl = `${protocol}//${wsHost}${wsPort ? `:${wsPort}` : ''}/ws/stream`
+    }
 
-    const customUrl = import.meta.env.VITE_WS_URL
-
-    const wsUrl =
-      customUrl ||
-      `${protocol}//${wsHost}${wsPort ? `:${wsPort}` : ''}/ws/stream`
+    console.log('Connecting to WebSocket:', wsUrl)
 
     try {
       const ws = new WebSocket(wsUrl)
