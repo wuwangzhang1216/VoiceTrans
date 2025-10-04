@@ -51,7 +51,12 @@
       "Bash(aws apprunner describe-service:*)",
       "Bash(aws logs tail:*)",
       "Bash(aws apprunner delete-service:*)",
-      "Bash(aws apprunner list-services:*)"
+      "Bash(aws apprunner list-services:*)",
+      "Bash(del:*)",
+      "Bash(rm:*)",
+      "Bash(aws elasticbeanstalk delete-application:*)",
+      "Bash(aws ec2 describe-instances:*)",
+      "Bash(aws ec2 describe-security-groups:*)"
     ],
     "deny": [],
     "ask": []
