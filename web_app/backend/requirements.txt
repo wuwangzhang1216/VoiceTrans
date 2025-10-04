@@ -3,7 +3,7 @@ fastapi==0.115.11
 starlette==0.41.3
 uvicorn[standard]==0.32.0
 python-multipart==0.0.6
-websockets==12.0
+websockets>=13.0,<15.1
 pydantic==2.11.9
 
 # AI APIs
