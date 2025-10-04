@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { LuxuryTranslator } from './components/LuxuryTranslator'
 import { SettingsModal } from './components/SettingsModal'
+import { API_URL } from './config'
 
 export interface Language {
   code: string
@@ -51,7 +52,7 @@ function App() {
   const fetchLanguages = async () => {
     try {
       // Try the new streaming API first
-      const response = await axios.get('http://localhost:8000/languages')
+      const response = await axios.get(`${API_URL}/languages`)
       setLanguages(response.data)
     } catch (error) {
       // Fallback to old API
@@ -75,7 +76,7 @@ function App() {
 
   const checkConfiguration = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/')
+      const response = await axios.get(`${API_URL}/`)
       setIsConfigured(response.data.initialized)
 
       // Load config from localStorage if exists
@@ -109,7 +110,7 @@ function App() {
 
       // Try to update backend config
       try {
-        const response = await axios.post('http://localhost:8000/config', {
+        const response = await axios.post(`${API_URL}/config`, {
           fireworks_api_key: config.fireworks_api_key,
           gemini_api_key: config.gemini_api_key,
           default_target_language: selectedLanguage
