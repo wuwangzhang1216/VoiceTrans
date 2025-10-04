@@ -145,7 +145,7 @@ async def startup_event():
         print("Warning: No API keys found in environment variables")
 
 # API Endpoints
-@app.get("/")
+@app.get("/api")
 async def root():
     """Root endpoint - API status"""
     return {
@@ -158,7 +158,7 @@ async def root():
         "has_genai": HAS_GENAI
     }
 
-@app.get("/languages")
+@app.get("/api/languages")
 async def get_languages():
     """Get list of supported languages"""
     return [
@@ -170,17 +170,17 @@ async def get_languages():
         for code, info in service.LANGUAGES.items()
     ]
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
     """Health check endpoint for load balancer"""
     return {"status": "healthy"}
 
-@app.get("/stats")
+@app.get("/api/stats")
 async def get_stats():
     """Get translation statistics"""
     return service.stats
 
-@app.post("/config")
+@app.post("/api/config")
 async def update_config(config: ConfigRequest):
     """Update API configuration"""
     try:
@@ -199,7 +199,7 @@ async def update_config(config: ConfigRequest):
             "initialized": service.is_initialized
         }
 
-@app.post("/translate")
+@app.post("/api/translate")
 async def translate_audio(
     file: UploadFile = File(...),
     target_language: str = "zh"
@@ -218,7 +218,7 @@ async def translate_audio(
         "timestamp": datetime.now().isoformat()
     }
 
-@app.websocket("/ws")
+@app.websocket("/api/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time audio streaming"""
     await websocket.accept()
