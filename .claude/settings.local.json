@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(echo $FIREWORKS_API_KEY)",
+      "Bash(npm run dev:*)",
+      "Bash(dir)",
+      "Bash(findstr:*)",
+      "Bash(netstat:*)",
+      "Bash(dir:*)",
+      "Bash(git add:*)",
+      "Bash(heroku:*)",
+      "Bash(git init:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(curl https://voicetrans-backend-2a1ab389b749.herokuapp.com/)",
+      "Bash(git rm:*)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "Bash(npm run build:*)",
+      "Bash(git checkout:*)",
+      "Bash(uvicorn:*)",
+      "Bash(taskkill:*)",
+      "Bash(node:*)",
+      "Bash(git reset:*)",
+      "Bash(find:*)",
+      "Bash(timeout:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
