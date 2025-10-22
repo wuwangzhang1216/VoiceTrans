@@ -1219,26 +1219,26 @@ ${'═'.repeat(60)}
             </div>
           </div>
         )}
-
-        {/* Footer */}
-        <footer className={`mt-8 pb-6 ${
-          isMobile ? 'px-4' : 'px-8'
-        }`}>
-          <div className="flex items-center justify-center gap-2 text-sm">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[#d4af37]/20" />
-            <Link
-              to="/privacy"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1a1a1a]/60 border border-[#d4af37]/20 hover:border-[#d4af37]/40 hover:bg-[#d4af37]/5 transition-all duration-300 group"
-            >
-              <Shield className="w-4 h-4 text-[#d4af37]/60 group-hover:text-[#d4af37] transition-colors" />
-              <span className="text-[#d4af37]/60 group-hover:text-[#d4af37] transition-colors uppercase tracking-wider text-xs font-medium">
-                Privacy Policy
-              </span>
-            </Link>
-            <div className="h-px flex-1 bg-gradient-to-r from-[#d4af37]/20 to-transparent" />
-          </div>
-        </footer>
       </main>
+
+      {/* Footer - Outside main to avoid being covered by absolute positioned elements */}
+      <footer className={`relative z-30 mt-8 pb-6 ${
+        isMobile ? 'px-4' : 'px-8'
+      }`}>
+        <div className="flex items-center justify-center gap-2 text-sm">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[#d4af37]/20" />
+          <Link
+            to="/privacy"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1a1a1a]/60 border border-[#d4af37]/20 hover:border-[#d4af37]/40 hover:bg-[#d4af37]/5 transition-all duration-300 group"
+          >
+            <Shield className="w-4 h-4 text-[#d4af37]/60 group-hover:text-[#d4af37] transition-colors" />
+            <span className="text-[#d4af37]/60 group-hover:text-[#d4af37] transition-colors uppercase tracking-wider text-xs font-medium">
+              Privacy Policy
+            </span>
+          </Link>
+          <div className="h-px flex-1 bg-gradient-to-r from-[#d4af37]/20 to-transparent" />
+        </div>
+      </footer>
 
       {/* Clear Confirmation Modal */}
       {showClearModal && (
