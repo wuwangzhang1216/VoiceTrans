@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
+import { Routes, Route } from 'react-router-dom'
 import axios from 'axios'
 import { LuxuryTranslator } from './components/LuxuryTranslator'
 import { SettingsModal } from './components/SettingsModal'
+import { Privacy } from './components/Privacy'
 
 export interface Language {
   code: string
@@ -124,14 +126,18 @@ function App() {
 
   return (
     <>
-      {/* Luxury Translator Component */}
-      <LuxuryTranslator
-        languages={languages}
-        selectedLanguage={selectedLanguage}
-        onLanguageChange={setSelectedLanguage}
-        onSettingsClick={() => setSettingsOpen(true)}
-        apiConfig={apiConfig}
-      />
+      <Routes>
+        <Route path="/" element={
+          <LuxuryTranslator
+            languages={languages}
+            selectedLanguage={selectedLanguage}
+            onLanguageChange={setSelectedLanguage}
+            onSettingsClick={() => setSettingsOpen(true)}
+            apiConfig={apiConfig}
+          />
+        } />
+        <Route path="/privacy" element={<Privacy />} />
+      </Routes>
 
       {/* Settings Modal */}
       <SettingsModal
