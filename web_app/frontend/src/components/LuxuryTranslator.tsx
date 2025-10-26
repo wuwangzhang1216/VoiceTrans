@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 
 import { Language } from '../App'
 
-import { Mic, MicOff, Settings, Globe, Zap, Download, Trash2, Shield } from 'lucide-react'
+import { Mic, MicOff, Settings, Globe, Zap, Download, Trash2, Shield, Monitor } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { LanguageDropdown } from './LanguageDropdown'
 import { useDeviceType, useResponsiveValue } from '../hooks/useDeviceType'
@@ -176,6 +176,7 @@ export function LuxuryTranslator({
   })
 
   const [showClearModal, setShowClearModal] = useState(false)
+  const [audioSource, setAudioSource] = useState<'microphone' | 'system'>('microphone')
 
   // Responsive design
   const { type: deviceType } = useDeviceType()
@@ -576,19 +577,51 @@ export function LuxuryTranslator({
 
       await new Promise((resolve) => setTimeout(resolve, 500))
 
-      console.log('Requesting microphone access...')
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1,
-          sampleRate: 16000,
-          sampleSize: 16,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      })
+      let stream: MediaStream
 
-      console.log('Microphone access granted')
+      if (audioSource === 'system') {
+        console.log('Requesting system audio access...')
+        // Use getDisplayMedia to capture system audio
+        // Note: video must be true or a constraint object, cannot be false
+        const displayStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,  // Required by the API
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          } as any,
+        })
+        console.log('System audio access granted')
+
+        // Stop video track immediately as we only need audio
+        const videoTrack = displayStream.getVideoTracks()[0]
+        if (videoTrack) {
+          videoTrack.stop()
+          displayStream.removeTrack(videoTrack)
+        }
+
+        // Check if audio track exists
+        const audioTracks = displayStream.getAudioTracks()
+        if (audioTracks.length === 0) {
+          throw new Error('No audio track available. Please make sure to share audio when selecting the screen/tab.')
+        }
+
+        stream = displayStream
+      } else {
+        console.log('Requesting microphone access...')
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            sampleRate: 16000,
+            sampleSize: 16,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        })
+        console.log('Microphone access granted')
+      }
+
       streamRef.current = stream
 
       const audioContext = new AudioContext({ sampleRate: 16000 })
@@ -840,6 +873,8 @@ ${'═'.repeat(60)}
           status={status}
           audioLevel={audioLevel}
           logoLevels={logoLevels}
+          audioSource={audioSource}
+          onAudioSourceChange={setAudioSource}
         />
       ) : (
         <header className="relative z-20 border-b border-[#d4af37]/20 bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a]">
@@ -870,6 +905,34 @@ ${'═'.repeat(60)}
                 selectedLanguage={selectedLanguage}
                 onLanguageChange={onLanguageChange}
               />
+
+              {/* Audio Source Selector */}
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#1a1a1a] border border-[#d4af37]/30">
+                <button
+                  onClick={() => setAudioSource('microphone')}
+                  disabled={isRecording}
+                  className={`p-2 rounded-md transition-all ${
+                    audioSource === 'microphone'
+                      ? 'bg-[#d4af37] text-[#0a0a0a]'
+                      : 'text-[#d4af37]/50 hover:text-[#d4af37] hover:bg-[#d4af37]/10'
+                  } ${isRecording ? 'cursor-not-allowed opacity-50' : ''}`}
+                  title="Microphone"
+                >
+                  <Mic className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setAudioSource('system')}
+                  disabled={isRecording}
+                  className={`p-2 rounded-md transition-all ${
+                    audioSource === 'system'
+                      ? 'bg-[#d4af37] text-[#0a0a0a]'
+                      : 'text-[#d4af37]/50 hover:text-[#d4af37] hover:bg-[#d4af37]/10'
+                  } ${isRecording ? 'cursor-not-allowed opacity-50' : ''}`}
+                  title="System Audio"
+                >
+                  <Monitor className="w-4 h-4" />
+                </button>
+              </div>
 
               {/* Settings */}
               <button

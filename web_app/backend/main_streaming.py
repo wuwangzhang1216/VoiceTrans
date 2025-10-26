@@ -261,9 +261,9 @@ def initialize_service():
                     fireworks_key=config.get('fireworks_api_key'),
                     gemini_key=config.get('gemini_api_key')
                 )
-                print("⚠️  Configuration loaded from config.json (fallback)")
+                print("WARNING: Configuration loaded from config.json (fallback)")
         except Exception as e:
-            print(f"❌ Failed to load config: {e}")
+            print(f"ERROR: Failed to load config: {e}")
 
 # Initialize on module load
 initialize_service()

@@ -1,4 +1,4 @@
-import { Mic, MicOff, Settings, Menu, X } from 'lucide-react'
+import { Mic, MicOff, Settings, Menu, X, Monitor } from 'lucide-react'
 import { useState } from 'react'
 import { Language } from '../App'
 import { LanguageDropdown } from './LanguageDropdown'
@@ -80,6 +80,8 @@ interface MobileHeaderProps {
   status: string
   audioLevel: number
   logoLevels: number[]
+  audioSource: 'microphone' | 'system'
+  onAudioSourceChange: (source: 'microphone' | 'system') => void
 }
 
 export function MobileHeader({
@@ -93,6 +95,8 @@ export function MobileHeader({
   status,
   audioLevel,
   logoLevels,
+  audioSource,
+  onAudioSourceChange,
 }: MobileHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -143,6 +147,35 @@ export function MobileHeader({
                 selectedLanguage={selectedLanguage}
                 onLanguageChange={onLanguageChange}
               />
+            </div>
+
+            {/* Audio Source Selector */}
+            <div className="w-full flex items-center gap-2 p-2 rounded-lg bg-[#1a1a1a] border border-[#d4af37]/30">
+              <span className="text-xs text-[#d4af37]/80 uppercase tracking-wider flex-shrink-0">Audio:</span>
+              <button
+                onClick={() => onAudioSourceChange('microphone')}
+                disabled={isRecording}
+                className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-md transition-all active:scale-98 ${
+                  audioSource === 'microphone'
+                    ? 'bg-[#d4af37] text-[#0a0a0a]'
+                    : 'text-[#d4af37]/50 hover:text-[#d4af37] hover:bg-[#d4af37]/10'
+                } ${isRecording ? 'cursor-not-allowed opacity-50' : ''}`}
+              >
+                <Mic className="w-4 h-4" />
+                <span className="text-xs font-medium">Mic</span>
+              </button>
+              <button
+                onClick={() => onAudioSourceChange('system')}
+                disabled={isRecording}
+                className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-md transition-all active:scale-98 ${
+                  audioSource === 'system'
+                    ? 'bg-[#d4af37] text-[#0a0a0a]'
+                    : 'text-[#d4af37]/50 hover:text-[#d4af37] hover:bg-[#d4af37]/10'
+                } ${isRecording ? 'cursor-not-allowed opacity-50' : ''}`}
+              >
+                <Monitor className="w-4 h-4" />
+                <span className="text-xs font-medium">System</span>
+              </button>
             </div>
 
             {/* Settings Button */}
